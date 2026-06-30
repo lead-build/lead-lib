@@ -1,0 +1,89 @@
+|{ pb, ... }|
+|{
+    cmd_cc ? "gcc",
+    cmd_ld ? "gcc",
+
+    common_flags ? [],
+
+    cflags ? [],
+    ldflags ? [],
+
+    includes ? [],
+    defines ? { },
+    ...
+}|
+|{ srcdir, objdir, ... }|
+let
+    define_args = [
+        | (name, value) | "-D${name}=${value}"
+        <- defines
+    ];
+
+    include_args = [
+        | include | "-I${include}"
+        <- includes
+    ];
+
+    src_to_obj = | file | pb.translate {
+        input = file;
+        from = srcdir;
+        to = objdir;
+    };
+
+    rule_compile = pb.rule (
+        |{ input, output, ... }|
+        {
+            command = [
+                cmd_cc,
+                "-c",
+                "-o",
+                output,
+                "-MMD",
+                "-MF",
+                "${output}.d",
+                input,
+            ] ++ common_flags ++ cflags ++ define_args ++ include_args;
+            depfile = "${output}.d";
+            description = "CC ${cmd_cc} ${input}";
+        }
+    );
+
+    rule_link = pb.rule (
+        |{ input, output, flags, ... }|
+        {
+            command = [
+                cmd_ld,
+                "-o",
+                output,
+                input,
+                flags,
+            ] ++ common_flags ++ ldflags;
+            description = "LD ${cmd_ld} ${output}";
+        }
+    );
+
+    cc = | file | pb.build {
+        rule = rule_compile;
+        input = file;
+        output = src_to_obj file - ".c" + ".o";
+    };
+
+    as = | file | pb.build {
+        rule = rule_compile;
+        input = file;
+        output = src_to_obj file - ".S" + ".o";
+    };
+
+    ld = | output flags input | pb.build {
+        rule = rule_link;
+        input = input;
+        output = output;
+        flags = flags;
+    };
+    
+in
+{
+    cc = cc;
+    as = as;
+    ld = ld;
+}
