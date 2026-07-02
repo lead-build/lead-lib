@@ -1,4 +1,11 @@
 |{ include, cwd, ... }|
 {
     lang = include (cwd / "lang" / "lang.pbb");
+
+    build = |mod| let
+        
+    in
+    {
+
+    };
 }
