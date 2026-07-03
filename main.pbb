@@ -1,0 +1,9 @@
+{ cwd, ... }:
+let
+    langdef = lang: include (cwd / "lang" / lang / "main.pbb");
+in
+{
+    lang = {
+        c = langdef "c";
+    };
+}
