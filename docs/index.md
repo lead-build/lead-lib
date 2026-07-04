@@ -34,6 +34,14 @@ Planning to add:
 - Rust
 - and others...
 
+## Usage
+
+Best way of using lead-lib is to check it out as a submodule within your
+project, and `include` the file `lead-lib.pbb` into your projects `main.pbb`.
+
+That makes sure your build stays consistent until you manually upgrade the
+library.
+
 
 ## File structure
 
@@ -72,7 +80,7 @@ From an external perspective, the minimal module file is:
 
 ```pbb
 |{...}|
-|{...} @ target|
+|{...} @ config|
 {
     env = {
         c = {
@@ -82,7 +90,7 @@ From an external perspective, the minimal module file is:
         };
     };
 
-    obj = |{c = {cc, ...}, ...}| [
+    obj = |build| build.lang.c |{cc, ...}| [
         cc "${cwd}/myfile_a.c",
         cc "${cwd}/myfile_b.c",
         cc "${cwd}/myfile_c.c",
