@@ -8,8 +8,10 @@ let
 in
 {
     build = | config module | let
-        { target, obj, ... } = module config;
+        { target, obj, out, ... } = module config;
         build = lang.build config target;
+        obj_files = obj build;
+        out_files = out build obj_files;
     in
-    obj build;
+    out_files;
 }

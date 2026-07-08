@@ -75,6 +75,7 @@ configuration input. Therefore, modules are loaded in two passes:
 
 1. Environment and target configuration
 2. Object generation (compilation)
+3. Output generation (linking)
 
 From an external perspective, the minimal module file is:
 
@@ -95,10 +96,19 @@ From an external perspective, the minimal module file is:
         cc "${cwd}/myfile_b.c",
         cc "${cwd}/myfile_c.c",
     ];
+
+    out = |{c = {ld, ...}, ...} obj| [
+        ld "${cwd}/build/output.elf" obj
+    ];
 }
 ```
 
-where `obj` represents pass 2.
+where `obj` represents pass 2 (compilation) and `out` represents pass 3 (linking).
+
+The `out` function receives the build environment and the list of object files
+produced by `obj`, and returns the final build outputs (e.g. linked ELF files).
+This is where the link step is performed, combining all object files into the
+deliverable binary.
 
 
 ### Libraries and intermediate builds

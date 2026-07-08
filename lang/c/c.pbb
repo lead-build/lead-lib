@@ -16,14 +16,17 @@ let
             cmd_cc,
             common_flags ? [],
             cflags ? [],
-            defines ? { },
+            defines = config_defines ? { },
             ...
         } = config.c;
 
         {
             inc ? [],
+            defines = target_defines ? { },
             ...
         } = target.c;
+
+        defines = target_defines // config_defines;
 
         define_args = [
             | (name, value) | "-D${name}=${value}"
@@ -62,24 +65,23 @@ let
         } = config.c;
     in
     pb.rule (
-        |{ input, output, flags, ... }|
+        |{ input, output, ... }|
         {
             command = [
                 cmd_ld,
                 "-o",
                 output,
                 input,
-                flags,
             ] ++ common_flags ++ ldflags;
             description = "LD ${cmd_ld} ${output}";
         }
     );
 
-    cc_as = | config target |
+    build = | config target |
     let
-        rule = rule_compile config target;
-    in
-    let
+        rule_cc = rule_compile config target;
+        rule_ld = rule_link config target;
+
         src_to_obj = | file | pb.translate {
             input = file;
             from = config.common.srcdir;
@@ -89,37 +91,22 @@ let
     {
         cc = | file | pb.build
         {
-            rule = rule;
+            rule = rule_cc;
             input = file;
             output = src_to_obj file - ".c" + ".o";
         };
         as = | file | pb.build
         {
-            rule = rule;
+            rule = rule_cc;
             input = file;
             output = src_to_obj file - ".S" + ".o";
         };
-    };
-
-    ld = | config target |
-    let
-        rule = rule_link config target;
-    in
-    | output flags input | pb.build {
-        rule = rule;
-        input = input;
-        output = output;
-        flags = flags;
-    };
-
-    build = | config target |
-    let
-        { cc, as } = cc_as config target;
-    in
-    {
-        cc = cc;
-        as = as;
-        ld = ld config target;
+        ld = | output input | pb.build
+        {
+            rule = rule_ld;
+            input = input;
+            output = output;
+        };
     };
 
 in
