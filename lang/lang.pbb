@@ -1,5 +1,30 @@
 |{ include, cwd, ... }|
 let
     languages = [ "c" ];
+
+    lang_defs = {
+        | lang | (lang, include (cwd / lang / "${lang}.pbb"))
+        <- languages
+    };
+
+    empty_target = { | k | (k, { }) <- [ languages ] };
+
+    merge_target = | tgta tgtb |
+    let
+        all_tgta = empty_target // tgta;
+        all_tgtb = empty_target // tgtb;
+    in
+    {
+        | lang | (
+            lang,
+            lang_defs.{ lang }.merge_target all_tgta.{ lang } all_tgtb.{ lang }
+        ) <- languages
+    };
 in
-{ | lang | (lang, include (cwd / lang / "${lang}.pbb")) <- languages }
+{
+    merge_target = merge_target;
+    build = | config target |{
+        | lang | (lang, lang_defs.{ lang }.build config target)
+        <- languages
+    };
+}

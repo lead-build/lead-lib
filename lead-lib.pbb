@@ -1,11 +1,15 @@
 |{ include, cwd, ... }|
-{
+let
     lang = include (cwd / "lang" / "lang.pbb");
 
-    build = |mod| let
-        
-    in
-    {
-
+    merge = include (cwd / "tools" / "merge.pbb") {
+        lang = lang;
     };
+in
+{
+    build = | config module | let
+        { target, obj, ... } = module config;
+        build = lang.build config target;
+    in
+    obj build;
 }

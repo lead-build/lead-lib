@@ -1,0 +1,19 @@
+|{ ... }|
+|{ lang, ... }|
+let
+    empty_mod = {
+        env = { };
+        build = | target | [];
+    };
+
+    merge_two = | mod1 mod2 |{
+        env = lang.merge_target mod1.target mod2.target;
+
+        build = | target | (
+            (mod1.build target) ++ (mod2.build target)
+        );
+    };
+in
+| mods | (
+    | acc mod | merge_two acc mod <- empty_mod..mods
+)

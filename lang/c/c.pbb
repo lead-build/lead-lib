@@ -1,36 +1,40 @@
 |{ pb, ... }|
-|{
-    cmd_cc ? "gcc",
-    cmd_ld ? "gcc",
-
-    common_flags ? [],
-
-    cflags ? [],
-    ldflags ? [],
-
-    includes ? [],
-    defines ? { },
-    ...
-}|
-|{ srcdir, objdir, ... }|
 let
-    define_args = [
-        | (name, value) | "-D${name}=${value}"
-        <- defines
-    ];
 
-    include_args = [
-        | include | "-I${include}"
-        <- includes
-    ];
-
-    src_to_obj = | file | pb.translate {
-        input = file;
-        from = srcdir;
-        to = objdir;
+    merge_target = | tgta tgtb |{
+        cmd_cc = (tgta // tgtb).cmd_cc; # TODO: Assert at most one is set
+        cmd_ld = (tgta // tgtb).cmd_ld; # TODO: Assert at most one is set
+        cflags = tgta.cflags ++ tgtb.cflags;
+        ldflags = tgta.ldflags ++ tgtb.ldflags;
+        inc = tgta.inc ++ tgtb.inc;
+        defines = tgta.defines // tgtb.defines;
     };
 
-    rule_compile = pb.rule (
+    rule_compile = | config target |
+    let
+        {
+            cmd_cc,
+            common_flags ? [],
+            cflags ? [],
+            defines ? { },
+            ...
+        } = config.c;
+
+        {
+            inc ? [],
+            ...
+        } = target.c;
+
+        define_args = [
+            | (name, value) | "-D${name}=${value}"
+            <- defines
+        ];
+        include_args = [
+            | include | "-I${include}"
+            <- inc
+        ];
+    in
+    pb.rule (
         |{ input, output, ... }|
         {
             command = [
@@ -48,7 +52,16 @@ let
         }
     );
 
-    rule_link = pb.rule (
+    rule_link = | config target |
+    let
+        {
+            cmd_ld,
+            common_flags ? [],
+            ldflags ? [],
+            ...
+        } = config.c;
+    in
+    pb.rule (
         |{ input, output, flags, ... }|
         {
             command = [
@@ -62,28 +75,55 @@ let
         }
     );
 
-    cc = | file | pb.build {
-        rule = rule_compile;
-        input = file;
-        output = src_to_obj file - ".c" + ".o";
+    cc_as = | config target |
+    let
+        rule = rule_compile config target;
+    in
+    let
+        src_to_obj = | file | pb.translate {
+            input = file;
+            from = config.common.srcdir;
+            to = config.common.objdir;
+        };
+    in
+    {
+        cc = | file | pb.build
+        {
+            rule = rule;
+            input = file;
+            output = src_to_obj file - ".c" + ".o";
+        };
+        as = | file | pb.build
+        {
+            rule = rule;
+            input = file;
+            output = src_to_obj file - ".S" + ".o";
+        };
     };
 
-    as = | file | pb.build {
-        rule = rule_compile;
-        input = file;
-        output = src_to_obj file - ".S" + ".o";
-    };
-
-    ld = | output flags input | pb.build {
-        rule = rule_link;
+    ld = | config target |
+    let
+        rule = rule_link config target;
+    in
+    | output flags input | pb.build {
+        rule = rule;
         input = input;
         output = output;
         flags = flags;
     };
-    
+
+    build = | config target |
+    let
+        { cc, as } = cc_as config target;
+    in
+    {
+        cc = cc;
+        as = as;
+        ld = ld config target;
+    };
+
 in
 {
-    cc = cc;
-    as = as;
-    ld = ld;
+    merge_target = merge_target;
+    build = build;
 }

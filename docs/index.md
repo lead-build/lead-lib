@@ -82,7 +82,7 @@ From an external perspective, the minimal module file is:
 |{...}|
 |{...} @ config|
 {
-    env = {
+    target = {
         c = {
             inc = [
                 cwd
@@ -90,7 +90,7 @@ From an external perspective, the minimal module file is:
         };
     };
 
-    obj = |build| build.lang.c |{cc, ...}| [
+    obj = |{c = {cc, ...}}| [
         cc "${cwd}/myfile_a.c",
         cc "${cwd}/myfile_b.c",
         cc "${cwd}/myfile_c.c",
