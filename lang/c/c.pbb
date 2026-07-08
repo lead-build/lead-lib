@@ -1,13 +1,31 @@
-|{ pb, ... }|
+|{ pb, dbg, ... }|
 let
 
-    merge_target = | tgta tgtb |{
-        cmd_cc = (tgta // tgtb).cmd_cc; # TODO: Assert at most one is set
-        cmd_ld = (tgta // tgtb).cmd_ld; # TODO: Assert at most one is set
-        cflags = tgta.cflags ++ tgtb.cflags;
-        ldflags = tgta.ldflags ++ tgtb.ldflags;
-        inc = tgta.inc ++ tgtb.inc;
-        defines = tgta.defines // tgtb.defines;
+    merge_target = |{
+        cmd_cc = tgta_cmd_cc ? "gcc",
+        cmd_ld = tgta_cmd_ld ? "gcc",
+        cflags = tgta_cflags ? [],
+        ldflags = tgta_ldflags ? [],
+        inc = tgta_inc ? [],
+        defines = tgtadefines ? { },
+        ...
+    }|
+    |{
+        cmd_cc ? tgta_cmd_cc,
+        cmd_ld ? tgta_cmd_ld,
+        cflags = tgtb_cflag ? [],
+        ldflags = tgtb_ldflags ? [],
+        inc = tgtb_inc ? [],
+        defines = tgtb_defines ? { },
+        ...
+    }|
+    {
+        cmd_cc = cmd_cc;
+        cmd_ld = cmd_ld;
+        cflags = tgta_cflags ++ tgtb_cflags;
+        ldflags = tgta_ldflags ++ tgtb_ldflags;
+        inc = tgta_inc ++ tgtb_inc;
+        defines = tgtadefines // tgtb_defines;
     };
 
     rule_compile = | config target |

@@ -2,18 +2,27 @@
 |{ lang, ... }|
 let
     empty_mod = {
-        env = { };
-        build = | target | [];
+        target = { };
+        obj = |_| [];
+        out = |_ _| [];
     };
 
-    merge_two = | mod1 mod2 |{
-        env = lang.merge_target mod1.target mod2.target;
+    merge_two = | mod1 mod2 |
+    let
+        mod1_wrapped = empty_mod // mod1;
+        mod2_wrapped = empty_mod // mod2;
+    in
+    {
+        target = lang.merge_target mod1_wrapped.target mod2_wrapped.target;
 
-        build = | target | (
-            (mod1.build target) ++ (mod2.build target)
+        obj = | target | (
+            (mod1_wrapped.obj target) ++ (mod2_wrapped.obj target)
+        );
+        out = | target obj | (
+            (mod1_wrapped.out target obj) ++ (mod2_wrapped.out target obj)
         );
     };
 in
-| mods | (
-    | acc mod | merge_two acc mod <- empty_mod..mods
+| mods config | (
+    | acc mod | merge_two acc (mod config) <- empty_mod..mods
 )

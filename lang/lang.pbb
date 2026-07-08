@@ -1,4 +1,4 @@
-|{ include, cwd, ... }|
+|{ include, cwd, dbg, ... }|
 let
     languages = [ "c" ];
 
@@ -7,7 +7,7 @@ let
         <- languages
     };
 
-    empty_target = { | k | (k, { }) <- [ languages ] };
+    empty_target = { | k | (k, { }) <- languages };
 
     merge_target = | tgta tgtb |
     let

@@ -66,12 +66,12 @@ For example, a module containing an application's source code delivers the
 *object* files needed to build the application, based on the *environment*
 containing the compiler and its parameters.
 
-The project file then performs the final link step.
+The module's `out` function then performs the final link step.
 
 ### Module file structure
 
 Each module must be able to provide build input to other modules using system
-configuration input. Therefore, modules are loaded in two passes:
+configuration input. Therefore, modules are loaded in three passes:
 
 1. Environment and target configuration
 2. Object generation (compilation)

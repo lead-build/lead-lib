@@ -14,4 +14,6 @@ in
         out_files = out build obj_files;
     in
     out_files;
+
+    merge = merge;
 }
