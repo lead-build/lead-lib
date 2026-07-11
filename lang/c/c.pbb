@@ -1,4 +1,4 @@
-|{ pb, dbg, ... }|
+|{ pb, ... }|
 let
 
     merge_target = |{
@@ -76,7 +76,7 @@ let
     rule_link = | config target |
     let
         {
-            cmd_ld,
+            cmd_cc,
             common_flags ? [],
             ldflags ? [],
             ...
@@ -86,12 +86,12 @@ let
         |{ input, output, ... }|
         {
             command = [
-                cmd_ld,
+                cmd_cc,
                 "-o",
                 output,
                 input,
             ] ++ common_flags ++ ldflags;
-            description = "LD ${cmd_ld} ${output}";
+            description = "LD ${cmd_cc} ${output}";
         }
     );
 
@@ -100,10 +100,15 @@ let
         rule_cc = rule_compile config target;
         rule_ld = rule_link config target;
 
+        objdir = (
+            | path subdir | path / subdir
+            <- (config.common.objdir)..(target.common.subdir)
+        );
+
         src_to_obj = | file | pb.translate {
             input = file;
             from = config.common.srcdir;
-            to = config.common.objdir;
+            to = objdir;
         };
     in
     {

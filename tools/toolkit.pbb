@@ -1,0 +1,4 @@
+|{ ... }|
+{
+    flatten = | xss | ( | acc xs | acc ++ xs <- [ ]..xss );
+}

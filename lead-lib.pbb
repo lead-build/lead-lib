@@ -5,6 +5,8 @@ let
     merge = include (cwd / "tools" / "merge.pbb") {
         lang = lang;
     };
+
+    tk = include (cwd / "tools" / "toolkit.pbb");
 in
 {
     build = | config module | let
@@ -16,4 +18,6 @@ in
     out_files;
 
     merge = merge;
+
+    tk = tk;
 }

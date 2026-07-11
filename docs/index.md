@@ -24,15 +24,15 @@ It does so while remaining:
 - compatible with multiple architectures in the same build, for example with
   non-global CFLAGS
 
-It also provides helpers for languages.
+It also provides language and toolkit helpers.
 
-Currently:
-- C, via gcc
+Implemented language packages:
+- `common` for shared target metadata helpers
+- `c` for gcc-based C compilation and linking
 
-Planning to add:
-- C via clang
-- Rust
-- and others...
+Toolkit helpers:
+- `tk.flatten` for flattening list-of-lists values used in build graph
+  composition
 
 ## Usage
 
@@ -121,3 +121,26 @@ built only once.
 The requirement is that pass 2 returns _a_ correct build in the `obj` field,
 along with information in the language-specific environment that other modules
 can access.
+
+### Top-level exports
+
+Including `lead-lib.pbb` provides these top-level entries:
+
+- `build` for module build orchestration
+- `out_files` for selecting output artifacts
+- `merge` for combining module outputs
+- `tk` for common utility helpers
+- `lang` for language package access
+
+### Shared target metadata helpers
+
+The `lang.common` package includes shared helpers that can be used across
+language backends.
+
+- `merge_target`, which merges target-level metadata and appends
+  `common.subdir` values from multiple target fragments.
+
+This is used by the C backend so object paths can be translated to target-
+specific output subdirectories. In practice, object output now resolves under:
+
+`config.common.objdir / target.common.subdir`

@@ -1,6 +1,9 @@
-|{ include, cwd, dbg, ... }|
+|{ include, cwd, ... }|
 let
-    languages = [ "c" ];
+    languages = [
+        "common",
+        "c",
+    ];
 
     lang_defs = {
         | lang | (lang, include (cwd / lang / "${lang}.pbb"))
