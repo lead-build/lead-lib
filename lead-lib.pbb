@@ -7,8 +7,7 @@ let
     };
 
     tk = include (cwd / "tools" / "toolkit.pbb");
-in
-{
+
     build = | config module | let
         { target, obj, out, ... } = module config;
         build = lang.build config target;
@@ -17,7 +16,15 @@ in
     in
     out_files;
 
-    merge = merge;
+    reloc = | target config |{
+        target = (target config).target;
+        obj = |{ ... }| build config target;
+    };
 
+in
+{
+    build = build;
+    reloc = reloc;
+    merge = merge;
     tk = tk;
 }

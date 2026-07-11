@@ -28,7 +28,7 @@ let
         defines = tgtadefines // tgtb_defines;
     };
 
-    rule_compile = | config target |
+    tmpl_compile = | config target |
     let
         {
             cmd_cc,
@@ -73,7 +73,7 @@ let
         }
     );
 
-    rule_link = | config target |
+    tmpl_link = | config target |
     let
         {
             cmd_cc,
@@ -95,10 +95,34 @@ let
         }
     );
 
+    tmpl_reloc = | config target |
+    let
+        {
+            cmd_ld,
+            common_flags ? [],
+            ldflags ? [],
+            ...
+        } = config.c;
+    in
+    pb.rule (
+        |{ input, output, ... }|
+        {
+            command = [
+                cmd_ld,
+                "-r",
+                "-o",
+                output,
+                input,
+            ];
+            description = "LD reloc ${cmd_ld} ${output}";
+        }
+    );
+
     build = | config target |
     let
-        rule_cc = rule_compile config target;
-        rule_ld = rule_link config target;
+        rule_cc = tmpl_compile config target;
+        rule_link = tmpl_link config target;
+        rule_reloc = tmpl_reloc config target;
 
         objdir = (
             | path subdir | path / subdir
@@ -124,9 +148,15 @@ let
             input = file;
             output = src_to_obj file - ".S" + ".o";
         };
-        ld = | output input | pb.build
+        link = | output input | pb.build
         {
-            rule = rule_ld;
+            rule = rule_link;
+            input = input;
+            output = output;
+        };
+        reloc = | output input | pb.build
+        {
+            rule = rule_reloc;
             input = input;
             output = output;
         };
