@@ -6,6 +6,7 @@ let
         cmd_ld = tgta_cmd_ld ? "gcc",
         cflags = tgta_cflags ? [],
         ldflags = tgta_ldflags ? [],
+        reloc_flags = tgta_reloc_flags ? [],
         inc = tgta_inc ? [],
         defines = tgtadefines ? { },
         ...
@@ -13,8 +14,9 @@ let
     |{
         cmd_cc ? tgta_cmd_cc,
         cmd_ld ? tgta_cmd_ld,
-        cflags = tgtb_cflag ? [],
+        cflags = tgtb_cflags ? [],
         ldflags = tgtb_ldflags ? [],
+        reloc_flags = tgtb_reloc_flags ? [],
         inc = tgtb_inc ? [],
         defines = tgtb_defines ? { },
         ...
@@ -24,6 +26,7 @@ let
         cmd_ld = cmd_ld;
         cflags = tgta_cflags ++ tgtb_cflags;
         ldflags = tgta_ldflags ++ tgtb_ldflags;
+        reloc_flags = tgta_reloc_flags ++ tgtb_reloc_flags;
         inc = tgta_inc ++ tgtb_inc;
         defines = tgtadefines // tgtb_defines;
     };
@@ -99,8 +102,7 @@ let
     let
         {
             cmd_ld,
-            common_flags ? [],
-            ldflags ? [],
+            reloc_flags ? [],
             ...
         } = config.c;
     in
@@ -109,11 +111,10 @@ let
         {
             command = [
                 cmd_ld,
-                "-r",
                 "-o",
                 output,
                 input,
-            ];
+            ] ++ reloc_flags;
             description = "LD reloc ${cmd_ld} ${output}";
         }
     );

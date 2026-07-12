@@ -16,9 +16,15 @@ let
     in
     out_files;
 
-    reloc = | target config |{
-        target = (target config).target;
-        obj = |{ ... }| build config target;
+    reloc = | config module |
+    let
+        obj = build config module;
+    in
+    |{ ... }|
+    {
+        target = (module config).target;
+        inc = (module config).inc;
+        obj = |{ ... }| obj;
     };
 
 in
