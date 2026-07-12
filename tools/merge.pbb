@@ -24,5 +24,5 @@ let
     };
 in
 | mods config | (
-    | acc mod | merge_two acc (mod config) <- empty_mod..mods
+    | acc mod | merge_two acc (mod config) for empty_mod..mods
 )

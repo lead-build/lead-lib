@@ -7,10 +7,10 @@ let
 
     lang_defs = {
         | lang | (lang, include (cwd / lang / "${lang}.pbb"))
-        <- languages
+        for languages
     };
 
-    empty_target = { | k | (k, { }) <- languages };
+    empty_target = { | k | (k, { }) for languages };
 
     merge_target = | tgta tgtb |
     let
@@ -21,13 +21,13 @@ let
         | lang | (
             lang,
             lang_defs.{ lang }.merge_target all_tgta.{ lang } all_tgtb.{ lang }
-        ) <- languages
+        ) for languages
     };
 in
 {
     merge_target = merge_target;
     build = | config target |{
         | lang | (lang, lang_defs.{ lang }.build config target)
-        <- languages
+        for languages
     };
 }

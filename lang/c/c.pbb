@@ -51,11 +51,11 @@ let
 
         define_args = [
             | (name, value) | "-D${name}=${value}"
-            <- defines
+            for defines
         ];
         include_args = [
             | include | "-I${include}"
-            <- inc
+            for inc
         ];
     in
     pb.rule (
@@ -127,7 +127,7 @@ let
 
         objdir = (
             | path subdir | path / subdir
-            <- (config.common.objdir)..(target.common.subdir)
+            for (config.common.objdir)..(target.common.subdir)
         );
 
         src_to_obj = | file | pb.translate {
