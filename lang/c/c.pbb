@@ -4,6 +4,7 @@ let
     merge_target = |{
         cmd_cc = tgta_cmd_cc ? "gcc",
         cmd_ld = tgta_cmd_ld ? "gcc",
+        cmd_ld_reloc = tgta_cmd_ld_reloc ? "ld",
         cflags = tgta_cflags ? [],
         ldflags = tgta_ldflags ? [],
         reloc_flags = tgta_reloc_flags ? [],
@@ -14,6 +15,7 @@ let
     |{
         cmd_cc ? tgta_cmd_cc,
         cmd_ld ? tgta_cmd_ld,
+        cmd_ld_reloc ? tgta_cmd_ld_reloc,
         cflags = tgtb_cflags ? [],
         ldflags = tgtb_ldflags ? [],
         reloc_flags = tgtb_reloc_flags ? [],
@@ -24,6 +26,7 @@ let
     {
         cmd_cc = cmd_cc;
         cmd_ld = cmd_ld;
+        cmd_ld_reloc = cmd_ld_reloc;
         cflags = tgta_cflags ++ tgtb_cflags;
         ldflags = tgta_ldflags ++ tgtb_ldflags;
         reloc_flags = tgta_reloc_flags ++ tgtb_reloc_flags;
@@ -79,30 +82,9 @@ let
     tmpl_link = | config target |
     let
         {
-            cmd_cc,
+            cmd_ld,
             common_flags ? [],
             ldflags ? [],
-            ...
-        } = config.c;
-    in
-    pb.rule (
-        |{ input, output, ... }|
-        {
-            command = [
-                cmd_cc,
-                "-o",
-                output,
-                input,
-            ] ++ common_flags ++ ldflags;
-            description = "LD ${cmd_cc} ${output}";
-        }
-    );
-
-    tmpl_reloc = | config target |
-    let
-        {
-            cmd_ld,
-            reloc_flags ? [],
             ...
         } = config.c;
     in
@@ -114,8 +96,29 @@ let
                 "-o",
                 output,
                 input,
+            ] ++ common_flags ++ ldflags;
+            description = "LD ${cmd_ld} ${output}";
+        }
+    );
+
+    tmpl_reloc = | config target |
+    let
+        {
+            cmd_ld_reloc,
+            reloc_flags ? [],
+            ...
+        } = config.c;
+    in
+    pb.rule (
+        |{ input, output, ... }|
+        {
+            command = [
+                cmd_ld_reloc,
+                "-o",
+                output,
+                input,
             ] ++ reloc_flags;
-            description = "LD reloc ${cmd_ld} ${output}";
+            description = "LD reloc ${cmd_ld_reloc} ${output}";
         }
     );
 
