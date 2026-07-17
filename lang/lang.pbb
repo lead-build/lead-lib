@@ -1,16 +1,52 @@
 |{ include, cwd, ... }|
+|{
+    languages = ext_langs,
+    ...
+}|
 let
-    languages = [
-        "common",
-        "c",
-    ];
 
-    lang_defs = {
-        | lang | (lang, include (cwd / lang / "${lang}.pbb"))
+     # Add predefined langauges
+    languages = {
+        common = include "${cwd}/common/common.pbb";
+        c = include "${cwd}/c/c.pbb";
+    } // ext_langs;
+
+    default_target = {
+        | (lang, def) |
+        (lang,
+            {
+                | (field, { default, ... }) |
+                (field, default)
+                for (def.definition)
+            }
+        )
         for languages
     };
 
-    empty_target = { | k | (k, { }) for languages };
+    empty_target = { | (lang, _) | (lang, { }) for languages };
+
+    merge_lang = | lang_merge tgta tgtb |
+    {
+        | (field, { default, mergefnc }) |
+        let
+            field_a = switch (tgta ? field) {
+                true => tgta.{ field };
+                false => default;
+            };
+        in
+        (
+            field,
+            switch (tgta ? field) {
+                true => switch (tgtb ? field) {
+                    true => mergefnc tgta.{ field } tgtb.{ field };
+                    false => tgta.{ field };
+                };
+                false => tgtb.{ field };
+            }
+        )
+        for lang_merge
+        if | (field, _) | tgta ? field || tgtb ? field
+    };
 
     merge_target = | tgta tgtb |
     let
@@ -18,16 +54,20 @@ let
         all_tgtb = empty_target // tgtb;
     in
     {
-        | lang | (
+        | (lang, def) | (
             lang,
-            lang_defs.{ lang }.merge_target all_tgta.{ lang } all_tgtb.{ lang }
+            merge_lang def.definition all_tgta.{ lang } all_tgtb.{ lang }
         ) for languages
     };
 in
 {
     merge_target = merge_target;
-    build = | config target |{
-        | lang | (lang, lang_defs.{ lang }.build config target)
+    build = | config target |
+    let
+        target_defaults = merge_target default_target target;
+    in
+    {
+        | (lang, def) | (lang, def.build config target_defaults)
         for languages
     };
 }

@@ -1,18 +1,9 @@
 |{ pb, ... }|
-let
-
-    merge_target = |{
-        subdir = tgta_subdir ? [],
-        ...
-    }|
-    |{
-        subdir = tgtb_subdir ? [],
-        ...
-    }|
-    {
-        subdir = tgta_subdir ++ tgtb_subdir;
-    };
-in
 {
-    merge_target = merge_target;
+    definition = {
+        subdir = {
+            default = [];
+            mergefnc = | a b | a ++ b;
+        };
+    };
 }

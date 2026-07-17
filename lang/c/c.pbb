@@ -1,39 +1,5 @@
 |{ pb, ... }|
 let
-
-    merge_target = |{
-        cmd_cc = tgta_cmd_cc ? "gcc",
-        cmd_ld = tgta_cmd_ld ? "gcc",
-        cmd_ld_reloc = tgta_cmd_ld_reloc ? "ld",
-        cflags = tgta_cflags ? [],
-        ldflags = tgta_ldflags ? [],
-        reloc_flags = tgta_reloc_flags ? [],
-        inc = tgta_inc ? [],
-        defines = tgtadefines ? { },
-        ...
-    }|
-    |{
-        cmd_cc ? tgta_cmd_cc,
-        cmd_ld ? tgta_cmd_ld,
-        cmd_ld_reloc ? tgta_cmd_ld_reloc,
-        cflags = tgtb_cflags ? [],
-        ldflags = tgtb_ldflags ? [],
-        reloc_flags = tgtb_reloc_flags ? [],
-        inc = tgtb_inc ? [],
-        defines = tgtb_defines ? { },
-        ...
-    }|
-    {
-        cmd_cc = cmd_cc;
-        cmd_ld = cmd_ld;
-        cmd_ld_reloc = cmd_ld_reloc;
-        cflags = tgta_cflags ++ tgtb_cflags;
-        ldflags = tgta_ldflags ++ tgtb_ldflags;
-        reloc_flags = tgta_reloc_flags ++ tgtb_reloc_flags;
-        inc = tgta_inc ++ tgtb_inc;
-        defines = tgtadefines // tgtb_defines;
-    };
-
     tmpl_compile = | config target |
     let
         {
@@ -168,6 +134,40 @@ let
 
 in
 {
-    merge_target = merge_target;
+    definition = {
+        cmd_cc = {
+            default = "gcc";
+            mergefnc = | a b | b;
+        };
+        cmd_ld = {
+            default = "gcc";
+            mergefnc = | a b | b;
+        };
+        cmd_ld_reloc = {
+            default = "ld";
+            mergefnc = | a b | b;
+        };
+        cflags = {
+            default = [];
+            mergefnc = | a b | a ++ b;
+        };
+        ldflags = {
+            default = [];
+            mergefnc = | a b | a ++ b;
+        };
+        reloc_flags = {
+            default = [];
+            mergefnc = | a b | a ++ b;
+        };
+        inc = {
+            default = [];
+            mergefnc = | a b | a ++ b;
+        };
+        defines = {
+            default = { };
+            mergefnc = | a b | a // b;
+        };
+    };
+
     build = build;
 }

@@ -1,6 +1,12 @@
 |{ include, cwd, ... }|
+|{
+    languages ? { },
+    ...
+}|
 let
-    lang = include (cwd / "lang" / "lang.pbb");
+    lang = include (cwd / "lang" / "lang.pbb") {
+        languages = languages;
+    };
 
     merge = include (cwd / "tools" / "merge.pbb") {
         lang = lang;
