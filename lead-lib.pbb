@@ -8,10 +8,6 @@ let
         languages = languages;
     };
 
-    merge = include (cwd / "tools" / "merge.pbb") {
-        lang = lang;
-    };
-
     tk = include (cwd / "tools" / "toolkit.pbb");
 
     build = | config module | let
@@ -35,8 +31,8 @@ let
 
 in
 {
-    build = build;
+    build = lang.build;
     reloc = reloc;
-    merge = merge;
+    merge = lang.merge;
     tk = tk;
 }

@@ -1,0 +1,40 @@
+|{ include, args = { repo, ... }, ... }|
+let
+    mylang = {
+        merge = {
+            fa = | a b l | (a l) ++ (b l);
+            fb = | a b l | (a l) ++ (b l);
+        };
+
+        base = {
+            mylang = {
+                fa = | l | [];
+                fb = | l | [];
+            };
+        };
+    };
+
+    lib = include "${repo}/lead-lib.pbb" {
+        languages = {
+            mylang = mylang;
+        };
+    };
+
+    mod_a = {
+        mylang = {
+            fb = | l | (l.mylang.fa l) ++ [ "b" ];
+        };
+    };
+
+    mod_b = {
+        mylang = {
+            fa = | l | [ "a" ];
+        };
+        common = {
+            out = | l | (l.mylang.fb l);
+        };
+    };
+
+    out = lib.build [ mod_a, mod_b ];
+in
+out == [ "a", "b" ]

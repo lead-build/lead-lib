@@ -1,9 +1,21 @@
 |{ pb, ... }|
 {
-    definition = {
-        subdir = {
-            default = [];
-            mergefnc = | a b | a ++ b;
+    merge = {
+        arch = | a b l | b l;
+        variant = | a b l | b l;
+        srcdirs = | a b l | (a l) ++ (b l);
+        objdir = | a b l | b l;
+        subdir = | a b l | (a l) ++ (b l);
+        out = | a b l | (a l) ++ (b l);
+    };
+
+    base = {
+        common = {
+            arch = | l | "posix";
+            variant = | l | "native";
+            srcdirs = | l | [];
+            subdir = | l | [];
+            out = | l | [];
         };
     };
 }

@@ -1,49 +1,56 @@
 |{ pb, ... }|
 let
-    tmpl_compile = | config target |
+    tmpl_compile = | l |
     let
         {
-            cmd_cc,
-            common_flags ? [],
-            cflags ? [],
-            defines = config_defines ? { },
+            cmd_cc = cmd_cc_f,
+            cflags ? (|l| []),
+            inc ? (|l| []),
+            defines ? (| l |{ }),
             ...
-        } = config.c;
+        } = l.c;
 
-        {
-            inc ? [],
-            defines = target_defines ? { },
-            ...
-        } = target.c;
-
-        defines = target_defines // config_defines;
+        cmd_cc = cmd_cc_f l;
 
         define_args = [
             | (name, value) | "-D${name}=${value}"
-            for defines
+            for (defines l)
         ];
         include_args = [
             | include | "-I${include}"
-            for inc
+            for (inc l)
         ];
+
+        rule_compile = pb.rule (
+            |{ input, output, ... }|
+            {
+                command = [
+                    cmd_cc,
+                    "-c",
+                    "-o",
+                    output,
+                    "-MMD",
+                    "-MF",
+                    "${output}.d",
+                    input,
+                ] ++ (cflags l) ++ define_args ++ include_args;
+                depfile = "${output}.d";
+                description = "CC ${cmd_cc} ${input}";
+            }
+        );
+
+        src_to_obj = | file | pb.translate {
+            input = file;
+            from = l.common.srcdirs l;
+            to = l.common.objdir l;
+        };
     in
-    pb.rule (
-        |{ input, output, ... }|
-        {
-            command = [
-                cmd_cc,
-                "-c",
-                "-o",
-                output,
-                "-MMD",
-                "-MF",
-                "${output}.d",
-                input,
-            ] ++ common_flags ++ cflags ++ define_args ++ include_args;
-            depfile = "${output}.d";
-            description = "CC ${cmd_cc} ${input}";
-        }
-    );
+    | file | pb.build
+    {
+        rule = rule_compile;
+        input = file;
+        output = (src_to_obj file) - ".c" + ".o";
+    };
 
     tmpl_link = | config target |
     let
@@ -99,11 +106,6 @@ let
             for (config.common.objdir)..(target.common.subdir)
         );
 
-        src_to_obj = | file | pb.translate {
-            input = file;
-            from = config.common.srcdir;
-            to = objdir;
-        };
     in
     {
         cc = | file | pb.build
@@ -111,6 +113,12 @@ let
             rule = rule_cc;
             input = file;
             output = src_to_obj file - ".c" + ".o";
+        };
+        cc_nomove = | file | pb.build
+        {
+            rule = rule_cc;
+            input = file;
+            output = file - ".c" + ".o";
         };
         as = | file | pb.build
         {
@@ -134,38 +142,46 @@ let
 
 in
 {
-    definition = {
-        cmd_cc = {
-            default = "gcc";
-            mergefnc = | a b | b;
-        };
-        cmd_ld = {
-            default = "gcc";
-            mergefnc = | a b | b;
-        };
-        cmd_ld_reloc = {
-            default = "ld";
-            mergefnc = | a b | b;
-        };
-        cflags = {
-            default = [];
-            mergefnc = | a b | a ++ b;
-        };
-        ldflags = {
-            default = [];
-            mergefnc = | a b | a ++ b;
-        };
-        reloc_flags = {
-            default = [];
-            mergefnc = | a b | a ++ b;
-        };
-        inc = {
-            default = [];
-            mergefnc = | a b | a ++ b;
-        };
-        defines = {
-            default = { };
-            mergefnc = | a b | a // b;
+    merge = {
+        cmd_cc = | a b l | (b l);
+        cmd_ld = | a b l | (b l);
+        cmd_ld_reloc = | a b l | (b l);
+        cflags = | a b l | (a l) ++ (b l);
+        ldflags = | a b l | (a l) ++ (b l);
+        reloc_flags = | a b l | (a l) ++ (b l);
+
+        defines = | a b l | (a l) // (b l);
+
+        inc = | a b l | (a l) ++ (b l);
+        src = | a b l | (a l) ++ (b l);
+        obj = | a b l | (a l) ++ (b l);
+
+        app = | a b l | (a l) ++ (b l);
+    };
+
+    base = {
+        c = {
+            cmd_cc = | l | "gcc";
+            cmd_ld = | l | "gcc";
+            cmd_ld_reloc = | l | "ld";
+            cflags = | l | [];
+            ldflags = | l | [];
+            reloc_flags = | l | [];
+
+            defines = | l |{ };
+
+            inc = | l | [];
+            src = | l | [];
+
+            obj = | l |
+            let
+                compile = tmpl_compile l;
+            in
+            [
+                | src_file | compile src_file
+                for (l.c.src l)
+            ];
+            app = | l | [];
         };
     };
 
