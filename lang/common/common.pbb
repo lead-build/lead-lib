@@ -1,20 +1,31 @@
 |{ pb, ... }|
 {
     merge = {
+        target_name = | a b l | b l;
+
         arch = | a b l | b l;
         variant = | a b l | b l;
         srcdirs = | a b l | (a l) ++ (b l);
-        objdir = | a b l | b l;
+        objbasedir = | a b l | b l;
+        objdir = | a b l | a l;
         subdir = | a b l | (a l) ++ (b l);
+        outdir = | a b l | b l;
         out = | a b l | (a l) ++ (b l);
     };
 
     base = {
         common = {
+             # target_name = ...
+
             arch = | l | "posix";
             variant = | l | "native";
             srcdirs = | l | [];
             subdir = | l | [];
+            objdir = | l | (
+                | dir subdir | dir / subdir
+                for (l.common.objbasedir l)..(l.common.subdir l)
+            );
+            outdir = | l | (l.common.outdir l);
             out = | l | [];
         };
     };

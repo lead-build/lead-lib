@@ -10,14 +10,6 @@ let
 
     tk = include (cwd / "tools" / "toolkit.pbb");
 
-    build = | config module | let
-        { target, obj, out, ... } = module config;
-        build = lang.build config target;
-        obj_files = obj build;
-        out_files = out build obj_files;
-    in
-    out_files;
-
     reloc = | config module |
     let
         obj = build config module;

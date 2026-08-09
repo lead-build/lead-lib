@@ -7,10 +7,12 @@ let
             cflags ? (|l| []),
             inc ? (|l| []),
             defines ? (| l |{ }),
+            extra_deps = extra_deps_f ? (| l | []),
             ...
         } = l.c;
 
         cmd_cc = cmd_cc_f l;
+        extra_deps = extra_deps_f l;
 
         define_args = [
             | (name, value) | "-D${name}=${value}"
@@ -45,34 +47,41 @@ let
             to = l.common.objdir l;
         };
     in
-    | file | pb.build
+    | file | rule_compile
     {
-        rule = rule_compile;
         input = file;
         output = (src_to_obj file) - ".c" + ".o";
+        deps = extra_deps;
     };
 
-    tmpl_link = | config target |
+    tmpl_link = | l |
     let
         {
-            cmd_ld,
-            common_flags ? [],
-            ldflags ? [],
+            cmd_ld = cmd_ld_f,
+            common_flags ? (| l | []),
+            ldflags ? (| l | []),
             ...
-        } = config.c;
+        } = l.c;
+
+        cmd_ld = cmd_ld_f l;
+
+        rule_link = pb.rule (
+            |{ input, output, ... }|
+            {
+                command = [
+                    cmd_ld,
+                    "-o",
+                    output,
+                    input,
+                ] ++ (common_flags l) ++ (ldflags l);
+                description = "LD ${cmd_ld} ${output}";
+            }
+        );
     in
-    pb.rule (
-        |{ input, output, ... }|
-        {
-            command = [
-                cmd_ld,
-                "-o",
-                output,
-                input,
-            ] ++ common_flags ++ ldflags;
-            description = "LD ${cmd_ld} ${output}";
-        }
-    );
+    | objs | rule_link {
+        input = objs;
+        output = (l.common.outdir l) / (l.common.target_name l);
+    };
 
     tmpl_reloc = | config target |
     let
@@ -94,52 +103,6 @@ let
             description = "LD reloc ${cmd_ld_reloc} ${output}";
         }
     );
-
-    build = | config target |
-    let
-        rule_cc = tmpl_compile config target;
-        rule_link = tmpl_link config target;
-        rule_reloc = tmpl_reloc config target;
-
-        objdir = (
-            | path subdir | path / subdir
-            for (config.common.objdir)..(target.common.subdir)
-        );
-
-    in
-    {
-        cc = | file | pb.build
-        {
-            rule = rule_cc;
-            input = file;
-            output = src_to_obj file - ".c" + ".o";
-        };
-        cc_nomove = | file | pb.build
-        {
-            rule = rule_cc;
-            input = file;
-            output = file - ".c" + ".o";
-        };
-        as = | file | pb.build
-        {
-            rule = rule_cc;
-            input = file;
-            output = src_to_obj file - ".S" + ".o";
-        };
-        link = | output input | pb.build
-        {
-            rule = rule_link;
-            input = input;
-            output = output;
-        };
-        reloc = | output input | pb.build
-        {
-            rule = rule_reloc;
-            input = input;
-            output = output;
-        };
-    };
-
 in
 {
     merge = {
@@ -149,6 +112,8 @@ in
         cflags = | a b l | (a l) ++ (b l);
         ldflags = | a b l | (a l) ++ (b l);
         reloc_flags = | a b l | (a l) ++ (b l);
+
+        extra_deps = | a b l | (a l) ++ (b l);
 
         defines = | a b l | (a l) // (b l);
 
@@ -168,6 +133,8 @@ in
             ldflags = | l | [];
             reloc_flags = | l | [];
 
+            extra_deps = | l | [];
+
             defines = | l |{ };
 
             inc = | l | [];
@@ -181,9 +148,10 @@ in
                 | src_file | compile src_file
                 for (l.c.src l)
             ];
-            app = | l | [];
+
+            app = | l | [
+                tmpl_link l (l.c.obj l)
+            ];
         };
     };
-
-    build = build;
 }
