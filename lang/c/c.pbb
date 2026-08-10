@@ -83,26 +83,35 @@ let
         output = (l.common.outdir l) / (l.common.target_name l);
     };
 
-    tmpl_reloc = | config target |
+    tmpl_reloc = | l |
     let
         {
-            cmd_ld_reloc,
-            reloc_flags ? [],
+            cmd_ld_reloc = cmd_ld_reloc_f,
+            reloc_flags ? (| l | []),
             ...
-        } = config.c;
+        } = l.c;
+
+        cmd_ld_reloc = cmd_ld_reloc_f l;
+
+        rule_reloc = pb.rule (
+            |{ input, output, ... }|
+            {
+                command = [
+                    cmd_ld_reloc,
+                    "-o",
+                    output,
+                    input,
+                ] ++ (reloc_flags l);
+                description = "LD reloc ${cmd_ld_reloc} ${output}";
+            }
+        );
+
+        target_name = l.common.target_name l;
     in
-    pb.rule (
-        |{ input, output, ... }|
-        {
-            command = [
-                cmd_ld_reloc,
-                "-o",
-                output,
-                input,
-            ] ++ reloc_flags;
-            description = "LD reloc ${cmd_ld_reloc} ${output}";
-        }
-    );
+    | objs | rule_reloc {
+        input = objs;
+        output = (l.common.outdir l) / "${target_name}.o";
+    };
 in
 {
     merge = {
@@ -122,6 +131,7 @@ in
         obj = | a b l | (a l) ++ (b l);
 
         app = | a b l | (a l) ++ (b l);
+        reloc = | a b l | (a l) ++ (b l);
     };
 
     base = {
@@ -151,6 +161,20 @@ in
 
             app = | l | [
                 tmpl_link l (l.c.obj l)
+            ];
+            reloc = | l | [
+                {
+                    c = {
+                        inc = let
+                            res = l.c.inc l;
+                        in
+                        | _ | res;
+                        obj = let
+                            res = [ tmpl_reloc l (l.c.obj l) ];
+                        in
+                        | _ | res;
+                    };
+                },
             ];
         };
     };
