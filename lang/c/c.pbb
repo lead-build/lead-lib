@@ -178,4 +178,33 @@ in
             ];
         };
     };
+
+    export = {
+        mod = |{
+            inc ? [],
+            src ? [],
+            defines ? { },
+            ...
+        }|{
+            c = {
+                inc = | l | inc;
+                src = | l | src;
+                defines = | l | defines;
+            };
+        };
+        app_build = | target_name |{
+            common = {
+                target_name = | l | target_name;
+                subdir = | l | [ target_name ];
+                out = | l | (l.c.app l);
+            };
+        };
+        reloc_build = | target_name |{
+            common = {
+                target_name = | l | target_name;
+                subdir = | l | [ target_name ];
+                out = | l | (l.c.reloc l);
+            };
+        };
+    };
 }

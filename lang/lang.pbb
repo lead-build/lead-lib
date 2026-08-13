@@ -47,8 +47,15 @@ let
     in (
         all.common.out all
     );
+
+    export = {
+        | (lang, def) | (lang, def.export)
+        for languages
+        if | (_, def) | def ? "export"
+    };
 in
 {
     merge = merge;
     build = build;
+    export = export;
 }

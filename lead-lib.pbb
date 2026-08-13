@@ -9,22 +9,10 @@ let
     };
 
     tk = include (cwd / "tools" / "toolkit.pbb");
-
-    reloc = | config module |
-    let
-        obj = build config module;
-    in
-    |{ ... }|
-    {
-        target = (module config).target;
-        inc = (module config).inc;
-        obj = |{ ... }| obj;
-    };
-
 in
 {
     build = lang.build;
-    reloc = reloc;
     merge = lang.merge;
     tk = tk;
+    lang = lang.export;
 }
