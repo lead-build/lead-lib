@@ -98,10 +98,11 @@ let
             {
                 command = [
                     cmd_ld_reloc,
+                ] ++ (reloc_flags l) ++ [
                     "-o",
                     output,
                     input,
-                ] ++ (reloc_flags l);
+                ];
                 description = "LD reloc ${cmd_ld_reloc} ${output}";
             }
         );
@@ -167,6 +168,10 @@ in
                     c = {
                         inc = let
                             res = l.c.inc l;
+                        in
+                        | _ | res;
+                        extra_deps = let
+                            res = l.c.extra_deps l;
                         in
                         | _ | res;
                         obj = let

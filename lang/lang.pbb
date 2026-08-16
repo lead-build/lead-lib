@@ -9,6 +9,7 @@ let
     languages = {
         common = include "${cwd}/common/common.pbb";
         c = include "${cwd}/c/c.pbb";
+        rust = include "${cwd}/rust/rust.pbb";
     } // ext_langs;
 
     do_merge = | field mergefnc a b | (

@@ -1,0 +1,147 @@
+|{ pb, ... }|
+let
+    tmpl_crate = | flags | pb.rule (
+        |{
+            name,
+            input,
+            output,
+            target_dir,
+            header_file,
+            depfile,
+        }|
+        {
+            command = [
+                "CBINDGEN_HEADER_OUTPUT=${header_file}",
+                "cargo",
+                "build",
+                "--manifest-path",
+                input,
+                "--target-dir",
+                target_dir,
+                "--release",
+            ] ++ flags;
+            pool = "console";
+            depfile = depfile;
+            description = "CARGO ${input}";
+        }
+    );
+
+    reloc_archive = | l |
+    let
+         # Borrow relocation info from c
+        {
+            cmd_ld_reloc = cmd_ld_reloc_f,
+            reloc_flags ? (| l | []),
+            ...
+        } = l.c;
+
+        cmd_ld_reloc = cmd_ld_reloc_f l;
+
+        rule_reloc = pb.rule (
+            |{ input, output, ... }|
+            {
+                command = [
+                    cmd_ld_reloc,
+                ] ++ (reloc_flags l) ++ [
+                    "-o",
+                    output,
+                    input,
+                ];
+                description = "LD reloc ${cmd_ld_reloc} ${output}";
+            }
+        );
+    in
+    | archive |
+    rule_reloc {
+        input = archive;
+        output = archive - ".a" + ".o";
+    };
+
+    build_crate = |{ outdir, objdir, target }|
+    let
+        flags = switch target {
+            false => [];
+            target => [ "--target=${target}" ];
+        };
+        subdir = switch target {
+            false => "release";
+            target => "${target}/release";
+        };
+        rule_crate = tmpl_crate flags;
+    in
+    |{ name, dir, ... }|
+    let
+        header_file = "${objdir}/${name}/${subdir}/${name}.h";
+        archive_file = "${objdir}/${name}/${subdir}/lib${name}.a";
+        depfile = "${objdir}/${name}/${subdir}/lib${name}.d";
+    in
+    rule_crate {
+        name = name;
+        input = "${dir}/Cargo.toml";
+        output = {
+            header_file = header_file;
+            archive_file = archive_file;
+        };
+        target_dir = "${objdir}/${name}";
+        header_file = header_file;
+        depfile = depfile;
+    };
+
+in
+{
+    merge = {
+        target = | a b l | (b l);
+        crates = | a b l | (a l) ++ (b l);
+        obj = | a b l | (a l) ++ (b l);
+    };
+
+    base = {
+        rust = {
+            target = | l | false;
+            crates = | l | [];
+            obj = | l | let
+                objdir = (l.common.objdir l);
+                outdir = (l.common.outdir l);
+                target = (l.rust.target l);
+            in
+            [
+                build_crate {
+                    outdir = outdir;
+                    objdir = objdir;
+                    target = target;
+                }
+                for (l.rust.crates l)
+            ];
+        };
+        c = {
+            inc = | l | [
+                | crate | crate.header_file / ".."
+                for (l.rust.obj l)
+            ];
+            extra_deps = | l | [
+                | crate | crate.header_file
+                for (l.rust.obj l)
+            ];
+            obj = | l | let
+                reloc = reloc_archive l;
+            in
+            [
+                | crate | reloc crate.archive_file
+                for (l.rust.obj l)
+            ];
+        };
+    };
+
+    export = {
+        mod = |{ name, dir }|{
+            rust = {
+                crates = | l | [
+                    {
+                        name = name;
+                        dir = dir;
+                    }
+                ];
+            };
+        };
+    };
+}
