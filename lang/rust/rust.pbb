@@ -26,23 +26,21 @@ let
         }
     );
 
-    reloc_archive = | l |
+    reloc_archive = | lexp |
     let
          # Borrow relocation info from c
         {
-            cmd_ld_reloc = cmd_ld_reloc_f,
-            reloc_flags ? (| l | []),
+            cmd_ld_reloc,
+            reloc_flags ? [],
             ...
-        } = l.c;
-
-        cmd_ld_reloc = cmd_ld_reloc_f l;
+        } = lexp.c;
 
         rule_reloc = pb.rule (
             |{ input, output, ... }|
             {
                 command = [
                     cmd_ld_reloc,
-                ] ++ (reloc_flags l) ++ [
+                ] ++ reloc_flags ++ [
                     "-o",
                     output,
                     input,
@@ -90,52 +88,49 @@ let
 in
 {
     merge = {
-        target = | a b l | (b l);
-        crates = | a b l | (a l) ++ (b l);
-        obj = | a b l | (a l) ++ (b l);
+        target = | a b | b;
+        crates = | a b | a ++ b;
+        obj = | a b | a ++ b;
     };
 
-    base = {
+    base = | l | let lexp = l l;
+    in {
         rust = {
-            target = | l | false;
-            crates = | l | [];
-            obj = | l | let
-                objdir = (l.common.objdir l);
-                outdir = (l.common.outdir l);
-                target = (l.rust.target l);
-            in
-            [
+            target = false;
+            crates = [];
+            obj = [
                 build_crate {
-                    outdir = outdir;
-                    objdir = objdir;
-                    target = target;
+                    outdir = lexp.common.outdir;
+                    objdir = lexp.common.objdir;
+                    target = lexp.rust.target;
                 }
-                for (l.rust.crates l)
+                for (lexp.rust.crates)
             ];
         };
         c = {
-            inc = | l | [
+            inc = [
                 | crate | crate.header_file / ".."
-                for (l.rust.obj l)
+                for (lexp.rust.obj)
             ];
-            extra_deps = | l | [
+            extra_deps = [
                 | crate | crate.header_file
-                for (l.rust.obj l)
+                for (lexp.rust.obj)
             ];
-            obj = | l | let
-                reloc = reloc_archive l;
+            obj = let
+                reloc = reloc_archive lexp;
             in
             [
                 | crate | reloc crate.archive_file
-                for (l.rust.obj l)
+                for (lexp.rust.obj)
             ];
         };
     };
 
     export = {
-        mod = |{ name, dir }|{
+        mod = |{ name, dir }|
+        | l |{
             rust = {
-                crates = | l | [
+                crates = [
                     {
                         name = name;
                         dir = dir;

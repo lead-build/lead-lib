@@ -1,0 +1,5 @@
+|{ include, dbg, args = { repo, ... }, ... }|
+let
+    lib = include "${repo}/lead-lib.pbb" { };
+in
+(lib.build [])== []

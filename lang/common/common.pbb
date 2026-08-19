@@ -1,32 +1,33 @@
 |{ pb, ... }|
 {
     merge = {
-        target_name = | a b l | b l;
+        target_name = | a b | b;
 
-        arch = | a b l | b l;
-        variant = | a b l | b l;
-        srcdirs = | a b l | (a l) ++ (b l);
-        objbasedir = | a b l | b l;
-        objdir = | a b l | a l;
-        subdir = | a b l | (a l) ++ (b l);
-        outdir = | a b l | b l;
-        out = | a b l | (a l) ++ (b l);
+        arch = | a b | b;
+        variant = | a b | b;
+        srcdirs = | a b | a ++ b;
+        objbasedir = | a b | b;
+        objdir = | a b | a;
+        subdir = | a b | a ++ b;
+        outdir = | a b | b;
+        out = | a b | a ++ b;
     };
 
-    base = {
+    base = | l | let lexp = l l;
+    in {
         common = {
              # target_name = ...
 
-            arch = | l | "posix";
-            variant = | l | "native";
-            srcdirs = | l | [];
-            subdir = | l | [];
-            objdir = | l | (
+            arch = "posix";
+            variant = "native";
+            srcdirs = [];
+            subdir = [];
+            objdir = (
                 | dir subdir | dir / subdir
-                for (l.common.objbasedir l)..(l.common.subdir l)
+                for (lexp.common.objbasedir)..(lexp.common.subdir)
             );
-            outdir = | l | (l.common.outdir l);
-            out = | l | [];
+            outdir = lexp.common.outdir;
+            out = [];
         };
     };
 }

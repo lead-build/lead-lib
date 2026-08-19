@@ -20,7 +20,8 @@ let
         }
     );
 
-    merge_two = | a b |{
+    merge_two = | a b |
+    {
         | (lang, def) |
         let
             lang_merge = | alang blang |{
@@ -35,7 +36,7 @@ let
         if | (lang, _) | a ? lang || b ? lang
     };
 
-    merge = | mods | (| acc mod | merge_two acc mod for { }..mods);
+    merge = | mods | (| acc mod l | merge_two (acc l) (mod l) for | _ |{ }..mods);
 
     base = merge [
         | (_, def) |
@@ -46,7 +47,7 @@ let
     build = | mods | let
         all = merge ([ base ] ++ mods);
     in (
-        all.common.out all
+        (all all).common.out
     );
 
     export = {

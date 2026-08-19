@@ -2,19 +2,19 @@
 let
     lib = include "${repo}/lead-lib.pbb" { };
 
-    mod_a = {
+    mod_a = | l |{
         c = {
-            cmd_cc = | l | "cc_a";
+            cmd_cc = "cc_a";
         };
     };
-    mod_b = {
+    mod_b = | l |{
         c = {
-            cmd_cc = | l | "cc_b";
+            cmd_cc = "cc_b";
         };
     };
 
     mods = lib.merge [ mod_a, mod_b, ];
 in
-(mods.c.cmd_cc mods == "cc_b") &&
-(mod_a.c.cmd_cc mod_a == "cc_a") &&
-(mod_b.c.cmd_cc mod_b == "cc_b")
+((mods mods).c.cmd_cc == "cc_b") &&
+((mod_a mod_a).c.cmd_cc == "cc_a") &&
+((mod_b mod_b).c.cmd_cc == "cc_b")

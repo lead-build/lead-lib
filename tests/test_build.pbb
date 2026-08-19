@@ -2,14 +2,15 @@
 let
     mylang = {
         merge = {
-            fa = | a b l | (a l) ++ (b l);
-            fb = | a b l | (a l) ++ (b l);
+            fa = | a b | a ++ b;
+            fb = | a b | a ++ b;
         };
 
-        base = {
+        base =
+        | l |{
             mylang = {
-                fa = | l | [];
-                fb = | l | [];
+                fa = [];
+                fb = [];
             };
         };
     };
@@ -20,18 +21,18 @@ let
         };
     };
 
-    mod_a = {
+    mod_a = | l |{
         mylang = {
-            fb = | l | (l.mylang.fa l) ++ [ "b" ];
+            fb = (l l).mylang.fa ++ [ "b" ];
         };
     };
 
-    mod_b = {
+    mod_b = | l |{
         mylang = {
-            fa = | l | [ "a" ];
+            fa = [ "a" ];
         };
         common = {
-            out = | l | (l.mylang.fb l);
+            out = (l l).mylang.fb;
         };
     };
 

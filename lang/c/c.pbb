@@ -1,26 +1,23 @@
 |{ pb, ... }|
 let
-    tmpl_compile = | l |
+    tmpl_compile = | lexp |
     let
         {
-            cmd_cc = cmd_cc_f,
-            cflags ? (|l| []),
-            inc ? (|l| []),
-            defines ? (| l |{ }),
-            extra_deps = extra_deps_f ? (| l | []),
+            cmd_cc,
+            cflags ? [],
+            inc ? [],
+            defines ? { },
+            extra_deps ? [],
             ...
-        } = l.c;
-
-        cmd_cc = cmd_cc_f l;
-        extra_deps = extra_deps_f l;
+        } = lexp.c;
 
         define_args = [
             | (name, value) | "-D${name}=${value}"
-            for (defines l)
+            for defines
         ];
         include_args = [
             | include | "-I${include}"
-            for (inc l)
+            for inc
         ];
 
         rule_compile = pb.rule (
@@ -35,7 +32,7 @@ let
                     "-MF",
                     "${output}.d",
                     input,
-                ] ++ (cflags l) ++ define_args ++ include_args;
+                ] ++ cflags ++ define_args ++ include_args;
                 depfile = "${output}.d";
                 description = "CC ${cmd_cc} ${input}";
             }
@@ -43,8 +40,8 @@ let
 
         src_to_obj = | file | pb.translate {
             input = file;
-            from = l.common.srcdirs l;
-            to = l.common.objdir l;
+            from = lexp.common.srcdirs;
+            to = lexp.common.objdir;
         };
     in
     | file | rule_compile
@@ -54,16 +51,14 @@ let
         deps = extra_deps;
     };
 
-    tmpl_link = | l |
+    tmpl_link = | lexp |
     let
         {
-            cmd_ld = cmd_ld_f,
-            common_flags ? (| l | []),
-            ldflags ? (| l | []),
+            cmd_ld,
+            common_flags ? [],
+            ldflags ? [],
             ...
-        } = l.c;
-
-        cmd_ld = cmd_ld_f l;
+        } = lexp.c;
 
         rule_link = pb.rule (
             |{ input, output, ... }|
@@ -73,32 +68,30 @@ let
                     "-o",
                     output,
                     input,
-                ] ++ (common_flags l) ++ (ldflags l);
+                ] ++ common_flags ++ ldflags;
                 description = "LD ${cmd_ld} ${output}";
             }
         );
     in
     | objs | rule_link {
         input = objs;
-        output = (l.common.outdir l) / (l.common.target_name l);
+        output = lexp.common.outdir / lexp.common.target_name;
     };
 
-    tmpl_reloc = | l |
+    tmpl_reloc = | lexp |
     let
         {
-            cmd_ld_reloc = cmd_ld_reloc_f,
-            reloc_flags ? (| l | []),
+            cmd_ld_reloc,
+            reloc_flags ? [],
             ...
-        } = l.c;
-
-        cmd_ld_reloc = cmd_ld_reloc_f l;
+        } = lexp.c;
 
         rule_reloc = pb.rule (
             |{ input, output, ... }|
             {
                 command = [
                     cmd_ld_reloc,
-                ] ++ (reloc_flags l) ++ [
+                ] ++ reloc_flags ++ [
                     "-o",
                     output,
                     input,
@@ -107,77 +100,78 @@ let
             }
         );
 
-        target_name = l.common.target_name l;
+        target_name = lexp.common.target_name;
     in
     | objs | rule_reloc {
         input = objs;
-        output = (l.common.outdir l) / "${target_name}.o";
+        output = lexp.common.outdir / "${target_name}.o";
     };
 in
 {
     merge = {
-        cmd_cc = | a b l | (b l);
-        cmd_ld = | a b l | (b l);
-        cmd_ld_reloc = | a b l | (b l);
-        cflags = | a b l | (a l) ++ (b l);
-        ldflags = | a b l | (a l) ++ (b l);
-        reloc_flags = | a b l | (a l) ++ (b l);
+        cmd_cc = | a b | b;
+        cmd_ld = | a b | b;
+        cmd_ld_reloc = | a b | b;
+        cflags = | a b | a ++ b;
+        ldflags = | a b | a ++ b;
+        reloc_flags = | a b | a ++ b;
 
-        extra_deps = | a b l | (a l) ++ (b l);
+        extra_deps = | a b | a ++ b;
 
-        defines = | a b l | (a l) // (b l);
+        defines = | a b | a // b;
 
-        inc = | a b l | (a l) ++ (b l);
-        src = | a b l | (a l) ++ (b l);
-        obj = | a b l | (a l) ++ (b l);
+        inc = | a b | a ++ b;
+        src = | a b | a ++ b;
+        obj = | a b | a ++ b;
 
-        app = | a b l | (a l) ++ (b l);
-        reloc = | a b l | (a l) ++ (b l);
+        app = | a b | a ++ b;
+        reloc = | a b | a ++ b;
     };
 
-    base = {
+    base = | l | let lexp = l l;
+    in {
         c = {
-            cmd_cc = | l | "gcc";
-            cmd_ld = | l | "gcc";
-            cmd_ld_reloc = | l | "ld";
-            cflags = | l | [];
-            ldflags = | l | [];
-            reloc_flags = | l | [];
+            cmd_cc = "gcc";
+            cmd_ld = "gcc";
+            cmd_ld_reloc = "ld";
+            cflags = [];
+            ldflags = [];
+            reloc_flags = [];
 
-            extra_deps = | l | [];
+            extra_deps = [];
 
-            defines = | l |{ };
+            defines = { };
 
-            inc = | l | [];
-            src = | l | [];
+            inc = [];
+            src = [];
 
-            obj = | l |
+            obj =
             let
-                compile = tmpl_compile l;
+                compile = tmpl_compile lexp;
             in
             [
                 | src_file | compile src_file
-                for (l.c.src l)
+                for (lexp.c.src)
             ];
 
-            app = | l | [
-                tmpl_link l (l.c.obj l)
+            app = [
+                tmpl_link lexp lexp.c.obj
             ];
-            reloc = | l | [
-                {
+            reloc = [
+                | l |{
                     c = {
                         inc = let
-                            res = l.c.inc l;
+                            res = lexp.c.inc;
                         in
-                        | _ | res;
+                        res;
                         extra_deps = let
-                            res = l.c.extra_deps l;
+                            res = lexp.c.extra_deps;
                         in
-                        | _ | res;
+                        res;
                         obj = let
-                            res = [ tmpl_reloc l (l.c.obj l) ];
+                            res = [ tmpl_reloc lexp lexp.c.obj ];
                         in
-                        | _ | res;
+                        res;
                     };
                 },
             ];
@@ -190,25 +184,28 @@ in
             src ? [],
             defines ? { },
             ...
-        }|{
+        }|
+        | l |{
             c = {
-                inc = | l | inc;
-                src = | l | src;
-                defines = | l | defines;
+                inc = inc;
+                src = src;
+                defines = defines;
             };
         };
-        app_build = | target_name |{
+        app_build = | target_name |
+        | l |{
             common = {
-                target_name = | l | target_name;
-                subdir = | l | [ target_name ];
-                out = | l | (l.c.app l);
+                target_name = target_name;
+                subdir = [ target_name ];
+                out = (l l).c.app;
             };
         };
-        reloc_build = | target_name |{
+        reloc_build = | target_name |
+        | l |{
             common = {
-                target_name = | l | target_name;
-                subdir = | l | [ target_name ];
-                out = | l | (l.c.reloc l);
+                target_name = target_name;
+                subdir = [ target_name ];
+                out = (l l).c.reloc;
             };
         };
     };
