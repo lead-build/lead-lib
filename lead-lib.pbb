@@ -13,6 +13,7 @@ in
 {
     build = lang.build;
     merge = lang.merge;
-    tk = tk;
     lang = lang.export;
+    gate = lang.gate;
+    tk = tk;
 }

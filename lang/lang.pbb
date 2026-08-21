@@ -36,7 +36,7 @@ let
         if | (lang, _) | a ? lang || b ? lang
     };
 
-    merge = | mods | (| acc mod l | merge_two (acc l) (mod l) for | _ |{ }..mods);
+    merge = | mods l | (| acc mod | merge_two acc (mod l) for { }..mods);
 
     base = merge [
         | (_, def) |
@@ -55,9 +55,22 @@ let
         for languages
         if | (_, def) | def ? "export"
     };
+
+    gate = | cond mod l |
+    {
+        | (k, v) | (
+            k,
+            switch (cond (l l)) {
+                false => { };
+                true => v;
+            }
+        )
+        for (mod l)
+    };
 in
 {
     merge = merge;
     build = build;
     export = export;
+    gate = gate;
 }
