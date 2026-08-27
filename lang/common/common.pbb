@@ -1,32 +1,12 @@
 |{ pb, ... }|
 {
     merge = {
-        target_name = | a b | b;
-
-        arch = | a b | b;
-        variant = | a b | b;
-        srcdirs = | a b | a ++ b;
-        objbasedir = | a b | b;
-        objdir = | a b | a;
-        subdir = | a b | a ++ b;
-        outdir = | a b | b;
         out = | a b | a ++ b;
     };
 
-    base = | l | let lexp = l l;
-    in {
+    base = | l |
+    {
         common = {
-             # target_name = ...
-
-            arch = "posix";
-            variant = "native";
-            srcdirs = [];
-            subdir = [];
-            objdir = (
-                | dir subdir | dir / subdir
-                for (lexp.common.objbasedir)..(lexp.common.subdir)
-            );
-            outdir = lexp.common.outdir;
             out = [];
         };
     };

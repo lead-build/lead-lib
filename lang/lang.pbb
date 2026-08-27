@@ -1,4 +1,4 @@
-|{ include, cwd, ... }|
+|{ include, cwd, ops, ... }|
 |{
     languages = ext_langs,
     ...
@@ -8,35 +8,47 @@ let
      # Add predefined langauges
     languages = {
         common = include "${cwd}/common/common.pbb";
+        config = include "${cwd}/config/config.pbb";
         c = include "${cwd}/c/c.pbb";
-        rust = include "${cwd}/rust/rust.pbb";
+         #rust = include "${cwd}/rust/rust.pbb";
     } // ext_langs;
 
-    do_merge = | field mergefnc a b | (
-        switch (a ? field, b ? field) {
-            (true, true) => mergefnc a.{ field } b.{ field };
-            (true, false) => a.{ field };
-            (false, true) => b.{ field };
-        }
-    );
-
-    merge_two = | a b |
+    merge = | mods l |
+    let
+        mods_evaled = [
+            | mod | mod l
+            for mods
+        ];
+         # All language fields are listed
+        zipped = {
+            | (lang, vs) | (lang, ops.transposeObjs vs)
+            for (ops.transposeObjs mods_evaled)
+        };
+    in
     {
-        | (lang, def) |
+        | (lang, langvars) |
         let
-            lang_merge = | alang blang |{
-                | (field, mergefnc) |
-                (field, do_merge field mergefnc alang blang)
-                for (def.merge)
-                if | (field, _) | alang ? field || blang ? field
-            };
+            langdef = languages.{ lang };
         in
-        (lang, do_merge lang lang_merge a b)
-        for languages
-        if | (lang, _) | a ? lang || b ? lang
+        (
+            lang,
+            {
+                | (field, vs) |
+                let
+                    mergefunc = langdef.merge.{ field };
+                in
+                (
+                    field,
+                    (
+                        | a b | mergefunc a b
+                        for vs
+                    )
+                )
+                for langvars
+            }
+        )
+        for zipped
     };
-
-    merge = | mods l | (| acc mod | merge_two acc (mod l) for { }..mods);
 
     base = merge [
         | (_, def) |
@@ -46,9 +58,8 @@ let
 
     build = | mods | let
         all = merge ([ base ] ++ mods);
-    in (
-        (all all).common.out
-    );
+    in
+    (all all).common.out;
 
     export = {
         | (lang, def) | (lang, def.export)
@@ -60,7 +71,7 @@ let
     {
         | (k, v) | (
             k,
-            switch (cond (l l)) {
+            switch (cond l) {
                 false => { };
                 true => v;
             }

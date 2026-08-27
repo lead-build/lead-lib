@@ -1,0 +1,32 @@
+|{ pb, ... }|
+{
+    merge = {
+        target_name = | a b | b;
+
+        arch = | a b | b;
+        variant = | a b | b;
+        srcdirs = | a b | a ++ b;
+        objbasedir = | a b | b;
+        objdir = | a b | b;
+        subdir = | a b | a ++ b;
+        outdir = | a b | b;
+    };
+
+    base = | l | let ll = l l;
+    in
+    {
+        config = {
+             # target_name = ...
+
+            arch = "posix";
+            variant = "native";
+            srcdirs = [];
+            subdir = [];
+            objdir = (
+                | dir subdir | dir / subdir
+                for (ll.config.objbasedir) : (ll.config.subdir)
+            );
+            outdir = null;
+        };
+    };
+}

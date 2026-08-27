@@ -93,35 +93,36 @@ in
         obj = | a b | a ++ b;
     };
 
-    base = | l | let lexp = l l;
-    in {
+    base = | l | let ll = l l;
+    in
+    {
         rust = {
             target = false;
             crates = [];
             obj = [
                 build_crate {
-                    outdir = lexp.common.outdir;
-                    objdir = lexp.common.objdir;
-                    target = lexp.rust.target;
+                    outdir = ll.config.outdir;
+                    objdir = ll.config.objdir;
+                    target = ll.rust.target;
                 }
-                for (lexp.rust.crates)
+                for (ll.rust.crates)
             ];
         };
         c = {
             inc = [
                 | crate | crate.header_file / ".."
-                for (lexp.rust.obj)
+                for (ll.rust.obj)
             ];
             extra_deps = [
                 | crate | crate.header_file
-                for (lexp.rust.obj)
+                for (ll.rust.obj)
             ];
             obj = let
-                reloc = reloc_archive lexp;
+                reloc = reloc_archive l;
             in
             [
                 | crate | reloc crate.archive_file
-                for (lexp.rust.obj)
+                for (ll.rust.obj)
             ];
         };
     };

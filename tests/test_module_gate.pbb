@@ -1,4 +1,4 @@
-|{ include, dbg, args = { repo, ... }, ... }|
+|{ include, args = { repo, ... }, ... }|
 let
     lib = include "${repo}/lead-lib.pbb" { };
 

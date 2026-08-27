@@ -5,11 +5,13 @@ let
     mod_a = | l |{
         c = {
             cmd_cc = "cc_a";
+            inc = [ "inc_a" ];
         };
     };
     mod_b = | l |{
         c = {
             cmd_cc = "cc_b";
+            inc = [ "inc_b" ];
         };
     };
 
@@ -17,4 +19,7 @@ let
 in
 ((mods mods).c.cmd_cc == "cc_b") &&
 ((mod_a mod_a).c.cmd_cc == "cc_a") &&
-((mod_b mod_b).c.cmd_cc == "cc_b")
+((mod_b mod_b).c.cmd_cc == "cc_b") &&
+((mods mods).c.inc == [ "inc_a", "inc_b" ]) &&
+((mod_a mod_a).c.inc == [ "inc_a" ]) &&
+((mod_b mod_b).c.inc == [ "inc_b" ])

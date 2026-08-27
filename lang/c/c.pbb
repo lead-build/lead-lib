@@ -40,8 +40,8 @@ let
 
         src_to_obj = | file | pb.translate {
             input = file;
-            from = lexp.common.srcdirs;
-            to = lexp.common.objdir;
+            from = lexp.config.srcdirs;
+            to = lexp.config.objdir;
         };
     in
     | file | rule_compile
@@ -55,7 +55,7 @@ let
     let
         {
             cmd_ld,
-            common_flags ? [],
+            config_flags ? [],
             ldflags ? [],
             ...
         } = lexp.c;
@@ -68,14 +68,14 @@ let
                     "-o",
                     output,
                     input,
-                ] ++ common_flags ++ ldflags;
+                ] ++ config_flags ++ ldflags;
                 description = "LD ${cmd_ld} ${output}";
             }
         );
     in
     | objs | rule_link {
         input = objs;
-        output = lexp.common.outdir / lexp.common.target_name;
+        output = lexp.config.outdir / lexp.config.target_name;
     };
 
     tmpl_reloc = | lexp |
@@ -100,11 +100,11 @@ let
             }
         );
 
-        target_name = lexp.common.target_name;
+        target_name = lexp.config.target_name;
     in
     | objs | rule_reloc {
         input = objs;
-        output = lexp.common.outdir / "${target_name}.o";
+        output = lexp.config.outdir / "${target_name}.o";
     };
 in
 {
@@ -128,8 +128,9 @@ in
         reloc = | a b | a ++ b;
     };
 
-    base = | l | let lexp = l l;
-    in {
+    base = | l | let ll = l l;
+    in
+    {
         c = {
             cmd_cc = "gcc";
             cmd_ld = "gcc";
@@ -147,31 +148,22 @@ in
 
             obj =
             let
-                compile = tmpl_compile lexp;
+                compile = tmpl_compile ll;
             in
             [
                 | src_file | compile src_file
-                for (lexp.c.src)
+                for (ll.c.src)
             ];
 
             app = [
-                tmpl_link lexp lexp.c.obj
+                tmpl_link ll ll.c.obj
             ];
             reloc = [
-                | l |{
+                | _ |{
                     c = {
-                        inc = let
-                            res = lexp.c.inc;
-                        in
-                        res;
-                        extra_deps = let
-                            res = lexp.c.extra_deps;
-                        in
-                        res;
-                        obj = let
-                            res = [ tmpl_reloc lexp lexp.c.obj ];
-                        in
-                        res;
+                        inc = ll.c.inc;
+                        extra_deps = ll.c.extra_deps;
+                        obj = [ tmpl_reloc ll ll.c.obj ];
                     };
                 },
             ];
@@ -185,7 +177,7 @@ in
             defines ? { },
             ...
         }|
-        | l |{
+        | _ |{
             c = {
                 inc = inc;
                 src = src;
@@ -194,17 +186,21 @@ in
         };
         app_build = | target_name |
         | l |{
-            common = {
+            config = {
                 target_name = target_name;
                 subdir = [ target_name ];
+            };
+            common = {
                 out = (l l).c.app;
             };
         };
         reloc_build = | target_name |
         | l |{
-            common = {
+            config = {
                 target_name = target_name;
                 subdir = [ target_name ];
+            };
+            common = {
                 out = (l l).c.reloc;
             };
         };

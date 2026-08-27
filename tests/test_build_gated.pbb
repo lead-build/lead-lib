@@ -1,10 +1,12 @@
-|{ include, dbg, args = { repo, ... }, ... }|
+|{ include, args = { repo, ... }, ... }|
 let
     lib = include "${repo}/lead-lib.pbb" { };
 
     config = | l |{
-        common = {
+        config = {
             arch = "arch_b";
+        };
+        common = {
             out = (l l).c.inc;
         };
     };
@@ -23,8 +25,8 @@ let
 
     mods = [
         config,
-        (lib.gate (|l| l.common.arch == "arch_a") mod_a),
-        (lib.gate (|l| l.common.arch == "arch_b") mod_b),
+        (lib.gate (|l| (l l).config.arch == "arch_a") mod_a),
+        (lib.gate (|l| (l l).config.arch == "arch_b") mod_b),
     ];
 in
 (lib.build mods) == [ "var_b" ]
