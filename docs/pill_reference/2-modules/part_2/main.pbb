@@ -1,0 +1,28 @@
+|{ cwd, include, ... }|
+let
+    lang_c = include "${cwd}/lib/lang_c.pbb";
+
+    app = {
+        srcs = [
+            "${cwd}/main.c",
+        ];
+        incs = [
+        ];
+    };
+
+    model = {
+        srcs = [
+            "${cwd}/model/model.c",
+            "${cwd}/model/some_other_model.c",
+        ];
+        incs = [
+            "${cwd}/model",
+        ];
+    };
+
+    all_modules = lang_c.merge [
+        app,
+        model,
+    ];
+in
+(lang_c.build "${cwd}/my_app" all_modules)
