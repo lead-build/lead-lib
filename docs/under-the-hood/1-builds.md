@@ -1,21 +1,19 @@
 # Pill 1 - Basic builds
 
-At first, given the understanding of the laungage of
-[lead-build](https://lead-build.readthedocs.io), it is quite trivial to set up
+At first, given an understanding of the language of
+[lead-build](https://lead-build.readthedocs.io), it is quite simple to set up
 a basic modular build system for a given language.
 
-It is recommended to read through the documentation and familiarize with the
-basics of the language itself before reading through this part.
+It is recommended to read through the documentation and familiarize yourself
+with the basics of the language before reading this section.
 
-For example, a C module usually consists of a given set of parameters, in this
-case we focus on the main two of them:
+For example, a C module usually consists of a given set of parameters. In this
+case, we focus on the two main ones:
 
 - source files
 - include paths
 
 ## Prerequisites
-
-
 
 ## Implementation
 
@@ -32,26 +30,26 @@ We can then easily define a module as:
 }
 ```
 
-The language definition can then be implemented as a library, that compiles the
-files into an output binary. Of course more configuration parameters can be
-added, such as which compilers, compiler flags, defines an so on.
+The language definition can then be implemented as a library that compiles the
+files into an output binary. Of course, more configuration parameters can be
+added, such as which compilers to use, compiler flags, and defines, and so on.
 
-The library can be a separate file, called `lib/lang_c.pbb`:
+The library can be a separate file called `lib/lang_c.pbb`:
 
 ```pbb
 |{ pb, ... }|
 {
     build = | output_file module |
     let
-         # Caluclate arguments for include paths
+         # Calculate arguments for include paths
         includes = [ | inc | "-I${inc}" for module.incs ];
 
-         # Define the compile command, this assumes the .o file is beside .c
+         # Define the compile command. This assumes the .o file is beside .c.
          # This is a function that takes a source file and returns the built
          # object file.
         compile_c_to_o =
         let
-             # Compile rule is only defined for the function below
+             # Compile rule is only defined for the function below.
             rule_compile = pb.rule (
                 |{ input, output }|
                 {
@@ -66,14 +64,14 @@ The library can be a separate file, called `lib/lang_c.pbb`:
                 }
             );
         in
-         # Return a function that takes a source file, and returns the build
+         # Return a function that takes a source file and returns the build
          # for the object file.
         | srcfile | rule_compile {
             input = srcfile;
             output = srcfile - ".c" + ".o";
         };
 
-         # Define the link command
+         # Define the link command.
         link_o_to_app = pb.rule (
             |{ input, output }|
             {
@@ -96,7 +94,7 @@ The library can be a separate file, called `lib/lang_c.pbb`:
 }
 ```
 
-Lets see then see how to use it. Create a main file for the project, `main.pbb`:
+Let's see how to use it. Create a main file for the project, `main.pbb`:
 
 ```pbb
 |{ cwd, include, ... }|
@@ -140,29 +138,29 @@ build my_app: gcc_o main.o lib/lib.o
 default my_app
 ```
 
-This file is the output of `pb`, and might be recognized as a ninja file, used
-to control [ninja](https://ninja-build.org/)
+This file is the output of `pb` and might be recognized as a ninja file used to
+control [ninja](https://ninja-build.org/).
 
 To finally build the project, just run `ninja` in the terminal, which will read
 the `build.ninja` file and run the commands to compile, given that the source
-files exists. Ninja is used, since it's great at handle dependency tracking,
-parallell builds, and speed, while `lead-build` becomse a frontend to generate
+files exist. Ninja is used because it is great at handling dependency tracking,
+parallel builds, and speed, while `lead-build` becomes a frontend to generate
 the build description.
 
-It can there be seen:
+It can be seen that:
 
-- `my_app`, as the top-level target is default
+- `my_app`, as the top-level target, is default
 - `my_app` is linked from two object files
-- The object files, are compiled from source, using two rules.
+- the object files are compiled from source using two rules
 
 In ninja, the actual rule names that are generated are only internal references.
-Therefore, in lead-build, those are just generated to be unique, and best effort
+Therefore, in lead-build, those are just generated to be unique and best effort
 to be descriptive.
 
 ## Conclusion
 
-This separates two important parts of a build, that should be handled in a
-build system
+This separates two important parts of a build that should be handled in a build
+system:
 
 - What to build
 - How to build it

@@ -1,6 +1,6 @@
 # lead-lib - Language tools for lead-build
 
-[lead-build](https://lead-build/readthedocs.io) is a declarative language for
+[lead-build](https://lead-build.readthedocs.io) is a declarative language for
 describing build projects. It enables reusable modules that are architecture-
 and compiler-independent, so integrators can choose what to include without
 adopting a library's internal structure.
@@ -36,24 +36,23 @@ Toolkit helpers:
 
 ## Usage
 
-Best way of using lead-lib is to check it out as a submodule within your
-project, and `include` the file `lead-lib.pbb` into your projects `main.pbb`.
+The best way to use lead-lib is to check it out as a submodule within your
+project and `include` the file `lead-lib.pbb` in your project's `main.pbb`.
 
 That makes sure your build stays consistent until you manually upgrade the
 library.
-
 
 ## File structure
 
 For users, there are two main file types: project files and module files.
 
 The project file is placed at the top level of the project and is called
-`main.pbb`. They sepecify the output of the deliverable out of the project.
-Including linking and packaging.
+`main.pbb`. It specifies the output of the deliverable from the project,
+including linking and packaging.
 
 The module file is placed in a module folder. By convention, it has the same
-name as the module, with a `.pbb` suffix. They contains the modules output,
-intended for further processing withing a parent lead-build script.
+name as the module, with a `.pbb` suffix. It contains the module's output,
+intended for further processing within a parent lead-build script.
 
 ## Theory of operation
 
@@ -109,7 +108,6 @@ The `out` function receives the build environment and the list of object files
 produced by `obj`, and returns the final build outputs (e.g. linked ELF files).
 This is where the link step is performed, combining all object files into the
 deliverable binary.
-
 
 ### Libraries and intermediate builds
 

@@ -1,18 +1,18 @@
 # Pill 6 - lead-lib and multiple languages
 
 At this point, we have built up all the building blocks needed to step into
-lead-lib, and see how to extend it from there.
+`lead-lib` and see how to extend it from there.
 
-We are here going to see how a single build can be used to build for multiple
-architectures and use code generation, by using the code generators to output
-.c source files.
+Here, we are going to see how a single build can be used to build for multiple
+architectures and use code generation by using code generators to output `.c`
+source files.
 
 ## Migrate to lead-lib
 
-Given the previous build, we are going to skip ahead to use `lead-lib`.
+Given the previous build, we are going to skip ahead and use `lead-lib`.
 
-The build from pill 4 will then give the `main.pbb`, given lead-lib is loaded
-as a subdirectory `lead-lib`, preferrably as a git submodule.
+The build from pill 4 will then give the `main.pbb`, assuming lead-lib is loaded
+as a subdirectory `lead-lib`, preferably as a git submodule.
 
 ```pbb
 |{ cwd, include, ... }|
@@ -28,8 +28,8 @@ let
         };
     };
 
-     # lead-lib are using a wrapper to make the code cleaner. It's just a normal
-     # module as seen before
+     # lead-lib uses a wrapper to make the code cleaner. It's just a normal
+     # module as seen before.
     my_app = lib.lang.c.mod {
         src = [
             "${cwd}/main.c",
@@ -42,7 +42,7 @@ let
     };
 
     app_mods = [
-         # this generates the lib.common.out definition for the app.
+         # This generates the lib.common.out definition for the app.
         lib.lang.c.app_build "my_app",
 
         target,
@@ -53,31 +53,30 @@ in
 lib.build app_mods
 ```
 
-As seen, all the building blocks are there from previous pill.
+As seen, all the building blocks are present from the previous pill.
 
 `lib.lang.c.mod` is just a wrapper to encapsulate the boilerplate for the module
-functions, and enable extension of type checking in the future.
+functions and enable future extension of type checking.
 
-`lib.lang.c.app_build` encapsulates setting the `l.common.out` paramter, as it
-is called in lead-lib, togheter with setting `l.config.target_name` to define
-the name of the application.
+`lib.lang.c.app_build` encapsulates setting the `l.common.out` parameter, as it
+is called in lead-lib, together with setting `l.config.target_name` to define the
+name of the application.
 
 ## Adding a language
 
 Given the flexibility of lead-lib, it is possible to add custom languages.
 
-Languages are part of the library itself, and can therefore not be added as
+Languages are part of the library itself and therefore cannot be added as
 modules. But by convention, `include "${cwd}/lead-lib/lead-lib.pbb" { }` takes
-an object as argument to tune lead-lib. And one way is to add the paramters
+an object as an argument to tune lead-lib, and one way is to add the parameter
 `languages`.
 
-In this case, we're going to look at a simple "language" called "structpack",
-which is a hypotethical python package that takes a `.toml` file, and converts
-it into a c header file, that is accessible from any other .c file, that would
-enable them access functions generated to pack and unpack structs for
-communication.
+In this case, we are going to look at a simple "language" called "structpack",
+which is a hypothetical Python package that takes a `.toml` file and converts it
+into a C header file that is accessible from any other `.c` file, enabling them
+to access functions generated to pack and unpack structs for communication.
 
-The same way would be possible to use for parser genererators, like `yacc` and
+The same approach would also be possible for parser generators such as `yacc` and
 `bison`.
 
 For that, we need to create a language definition file, here called
@@ -161,24 +160,24 @@ in
 }
 ```
 
-Feel free to dig into the parts hat might interest you. But in this pill we are
-going to focus on just a few parts:
+Feel free to dig into the parts that might interest you. But in this pill, we are
+going to focus on just a few parts.
 
-First, in lead-lib, the `base` module for a language can contain paramters for
-any other langauge too. The `base` module in this case shows how the language
-itself injects an include path, using `base.c.inc`. It is also injects the
-generated file to `base.c.extra_deps`, which the c implementation in lead-lib
-uses as dependency for all generated object files, to guarantee changes in the
-`.toml` input file rebuilds all other sources.
+First, in lead-lib, the `base` module for a language can contain parameters for
+any other language too. The `base` module in this case shows how the language
+itself injects an include path using `base.c.inc`. It also injects the generated
+file into `base.c.extra_deps`, which the C implementation in lead-lib uses as a
+dependency for all generated object files to guarantee that changes in the
+`.toml` input file rebuild all other sources.
 
 It also sets `export.mod`, which will be available as `lib.lang.sp.mod` to
 simplify generation of structpack modules.
 
-the include path in structpack is necessary since structpack generates the
-header files within a build-directory, so it tells structpack which translated
+The include path in structpack is necessary because structpack generates the
+header files within a build directory, so it tells structpack which translated
 paths to inject.
 
-The main file, with code generation will then be:
+The main file, with code generation, will then be:
 
 ```pbb
 |{ cwd, include, ... }|
@@ -198,8 +197,8 @@ let
         };
     };
 
-     # lead-lib are using a wrapper to make the code cleaner. It's just a normal
-     # module as seen before
+     # lead-lib uses a wrapper to make the code cleaner. It's just a normal
+     # module as seen before.
     my_app = lib.lang.c.mod {
         src = [
             "${cwd}/main.c",
@@ -220,7 +219,7 @@ let
     };
 
     app_mods = [
-         # this generates the lib.common.out definition for the app.
+         # This generates the lib.common.out definition for the app.
         lib.lang.c.app_build "my_app",
 
         target,
@@ -232,11 +231,12 @@ in
 lib.build app_mods
 ```
 
-The only two additions is the added `language` to lead-lib include, and the
+The only two additions are the added `language` to the lead-lib include and the
 structpack module `my_sp_mod`.
 
-The generated `build.ninja` can then correctly show all dependencies generated:
-```
+The generated `build.ninja` can then correctly show all generated dependencies:
+
+```ninja
 rule gcc_c_o_MMD
   command = gcc -c -o ${out} -MMD -MF ${out}.d ${in} -Ibuild/my_app/model -Imodel
   description = CC$ gcc$ ${in}
@@ -265,8 +265,8 @@ default out/my_app
 
 # Conclusion
 
-In this pill we have shown how the previous pills integrate into lead-lib, and
+In this pill, we have shown how the previous pills integrate into lead-lib and
 how to use the flexibility for code generation.
 
-In the next pill, we will show how it can be used for multiple parallell targets
+In the next pill, we will show how it can be used for multiple parallel targets
 and relocation libraries.

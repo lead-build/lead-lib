@@ -1,23 +1,23 @@
 # Pill 2 - Modules
 
-In the previous pill, we looked at how to define a single module, consisting of
-a set of source files, and a list of includes.
+In the previous pill, we looked at how to define a single module consisting of
+a set of source files and a list of include paths.
 
 In practice, we want to modularize the code. For example, we may have code for
 a UI frontend library, a terminal frontend library, and a data model backend
-library. Then some startup glue logic for each executable.
+library, as well as some startup glue logic for each executable.
 
-In this case, we look into how to split up the module from the previous pill
+In this case, we will look at how to split the module from the previous pill
 into different modules.
 
 ## Implementation
 
 In the previous pill, we defined an `app` module, which was implemented as a
-pb object, containing source files and include paths.
+`pb` object containing source files and include paths.
 
-lets say we want to create a generic model library.
+Let's say we want to create a generic model library.
 
-At a first glance, we can just split it up into two modules.
+At a first glance, we can simply split it into two modules.
 
 `main.pbb` can then be:
 
@@ -51,14 +51,14 @@ let
 in
 (lang_c.build "${cwd}/my_app" all_modules)
 ```
-However, there is one method that is new that is used here, and it's
-`lang_c.merge`. Lets implement that.
 
-At the end of the lang_c.pbb from previous pill, add the following before the
-last `}`
+However, there is one new method used here: `lang_c.merge`. Let's implement it.
 
-Note that this will be part of a library, not used by the end user. It is just
-shown how it can be done.
+At the end of `lang_c.pbb` from the previous pill, add the following before the
+final `}`.
+
+Note that this will be part of a library, not used by the end user. It is simply
+shown as an example of how it can be done.
 
 ```pbb
 
@@ -72,36 +72,36 @@ shown how it can be done.
 }
 ```
 
-Lets break it down into parts:
+Let's break it down into parts:
 
-`merge = | mods |` means `merge` is a function, it takes a variable `mods`,
+`merge = | mods |` means `merge` is a function that takes a variable `mods`,
 which is a list of all the modules in the project.
 
 The function returns `{ srcs = ...; incs = ...; }`, which is itself the same
 definition of a module. So it combines a list of modules into a single module.
 
-The last part `( | prev mod | prev ++ mod.xx for []: mods )` is using the
+The last part `( | prev mod | prev ++ mod.xx for []: mods )` uses the
 language construct called "fold" to flatten a list of lists into a single list.
 
-In lead-lib, this function is actually available as `tk.flatten`. but since we
-don't use lead-lib yet, we have to implement it on its own. But for now, you can
-just skip over the details of the impelemntation if you want.
+In lead-lib, this function is actually available as `tk.flatten`, but since we
+don't use lead-lib yet, we have to implement it ourselves. For now, you can
+just skip over the details of the implementation if you want.
 
-The concept of modules and `merge`, taking a list of modules, and combining them
-into a single module, is a central part of `lead-lib`, that will be extended and
-generalized in several steps later.
+The concept of modules and `merge`—taking a list of modules and combining them
+into a single module—is a central part of `lead-lib`, and it will be extended
+and generalized in several steps later.
 
-## Step two - multiple files.
+## Step two - multiple files
 
-So why is it important to use modules? All files still needs to be listed?
+So why is it important to use modules? Do all files still need to be listed?
 
-Lets split the `main.pbb` into separate files.
+Let's split `main.pbb` into separate files.
 
-The `model` module all have the files listed from within the same subdirectory,
-namely `model/`. Wouldn't it be great to have the subdirectory to enclose all of
+The `model` module has all the files listed from within the same subdirectory,
+namely `model/`. Wouldn't it be great to have the subdirectory enclose all of
 the configuration needed for that module?
 
-Lets try it out.
+Let's try it out.
 
 Add a file `model/model.pbb`:
 
@@ -118,20 +118,19 @@ Add a file `model/model.pbb`:
 }
 ```
 
-Note that, `cwd` in this case is an input from lead-build, referencing the
-directory of the `*.pbb` file. Therefore, referencing `"${cwd}/model.c" in this
-file results in referencing the file `model.c` relative to the directory of
+Note that `cwd` in this case is an input from lead-build, referencing the
+directory of the `*.pbb` file. Therefore, referencing `"${cwd}/model.c"` in
+this file results in referencing the file `model.c` relative to the directory of
 `model/model.pbb`.
 
-This means, the submodule `model/` does not need to have any references to where
-in the source tree it is placed the the overall project. This means it is
-possible to package build definitions in a library, like an embedded RTOS or
-source library, without having requirements on *where* it is placed in the
-source tree of the application. We will in later pills even see that it is not
-even required for the overall project to know what language the module is
-written in.
+This means the submodule `model/` does not need to reference where it is placed
+in the source tree of the overall project. This makes it possible to package
+build definitions in a library, like an embedded RTOS or source library, without
+requiring any assumptions about *where* it is placed in the application's
+source tree. In later pills, we will even see that it is not necessary for the
+overall project to know what language the module is written in.
 
-But this means, we need to include the file in the overall projects `main.pbb`:
+But this means we need to include the file in the overall project's `main.pbb`:
 
 ```pbb
 |{ cwd, include, ... }|
@@ -170,19 +169,19 @@ build my_app: gcc_o main.o model/model.o model/some_other_model.o
 #...
 ```
 
-placing the object files beside the .c files, as expected so far.
+placing the object files beside the `.c` files, as expected so far.
 
 # Conclusions
 
 We have shown the power of being able to split code into modules, where modules
 can split the build into:
 
-- What to integrate
-- What to include in the submodule
+- what to integrate
+- what to include in the submodule
 
-While have a single output.
+while still producing a single output.
 
-However, there are still mode to generalize.
+However, there is still more to generalize.
 
-In the next pill we will look at how to configure compilers, and how that fits
-into the module system, and what needs to be changed.
+In the next pill, we will look at how to configure compilers and how that fits
+into the module system, as well as what needs to change.
