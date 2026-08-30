@@ -1,0 +1,5 @@
+In this example, we are using lead-lib.
+
+In normal cases, lead-lib is loaded as a submodule of the project to build. But
+since this is an example within lead-lib itself, the symlink to the root of the
+repository is necessary.

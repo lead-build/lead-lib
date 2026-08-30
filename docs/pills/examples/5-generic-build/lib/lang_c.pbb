@@ -1,0 +1,99 @@
+|{ pb, dbg, ... }|
+let
+     # Function using fold to get the last element from a list
+    list_last = | list | (| prev elem | elem for list);
+
+     # we still need to build the module, but this time, it's not exported as a
+     # build. This will be used to generate the `app` field in the base module.
+     # To build, this needs to be referenced from `mod.config.out`.
+    build = | module |
+    let
+         # Caluclate arguments for include paths
+        includes = [ | inc | "-I${inc}" for module.c.incs ];
+
+        objdir = list_last module.config.objdir; # Get the objdir from config
+
+         # Generate the object file path from source file path. This uses the
+         # builtin function pb.translate
+        src_to_obj = | srcfile | pb.translate {
+            input = srcfile - ".c" + ".o"; # Change suffix from .c to .o
+            from = module.config.srcdir; # pb.translate takes a list of srcdirs
+            to = objdir;
+        };
+
+
+         # Define the compile command, this assumes the .o file is beside .c
+         # This is a function that takes a source file and returns the built
+         # object file.
+        compile_c_to_o =
+        let
+             # Compile rule is only defined for the function below
+            rule_compile = pb.rule (
+                |{ input, output }|
+                {
+                    command = [
+                        "gcc",
+                        "-c",
+                        "-o", output,
+                        "-MMD", "-MD", "${output}.d",
+                        input
+                    ]
+                    ++ includes;
+                    depfile = "${output}.d";
+                    description = "CC ${input}";
+                }
+            );
+        in
+         # Return a function that takes a source file, and returns the build
+         # for the object file.
+        | srcfile | rule_compile {
+            input = srcfile;
+            output = src_to_obj srcfile;
+        };
+
+         # Define the link command
+        link_o_to_app = pb.rule (
+            |{ input, output }|
+            {
+                command = [
+                    "gcc",
+                    "-o", output,
+                    input
+                ];
+                description = "LD ${output}";
+            }
+        );
+    in
+    link_o_to_app {
+        output = list_last module.config.app; # Get the app name from config
+        input = [
+            | srcfile | compile_c_to_o srcfile
+            for module.c.srcs
+        ];
+    };
+in
+{
+    base = | l |
+    let
+        ll = l l;
+    in
+    {
+         # No default sources or includes. Still needs to be defined
+        srcs = [];
+        incs = [];
+
+         # App is a list of all outputs, given this module should be built.
+         # This is referenced from a module in `main.pbb` if a C build is
+         # exptected.
+        app = [
+            build ll # Invoke the previous build function.
+        ];
+    };
+
+    merge = | mods |
+    {
+        srcs = ( | prev mod | prev ++ mod.srcs for []: mods );
+        incs = ( | prev mod | prev ++ mod.incs for []: mods );
+        app = ( | prev mod | prev ++ mod.app for []: mods );
+    };
+}

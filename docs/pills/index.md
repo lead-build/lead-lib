@@ -48,17 +48,16 @@ Good to know, and read up later, when needed
 
 ## The pills
 
-* [Pill 1 - **Simple builds**](1-builds.md) - separation of *what* to build from *how* to build
+* [Pill 1 - **Simple builds**](1-builds.md) - separation of *what* to build from
+  *how* to build
   it.
-* [Pill 2 - **Modules**](2-modules.md) - introduction of the concept of having source code
+* [Pill 2 - **Modules**](2-modules.md) - introduction of the concept of having
+  source code
   modules, and including libraries instead of source files.
 * Pill 3 - **Configuring compilers** - how to use modules to manage compiler
   configuration.
 * Pill 4 - **Dependent variables** - Looking at how module parameters can depend
   on eachother.
-* Pill 5 - **Code generation** - How to integrate code generation and custom
-  langauges
-* Pill 6 - **Generalization** - How can we use what we learned from code
-  generation to be generic, including generic multiple languages.
-* Pill 7 - **Libs and reusable parts of the builds** - How to reuse object code
-  between multiple configurations.
+* Pill 5 - **Generic build** - How to achieve a language-indepedendent build
+  function
+* Pill 6 - **Mapping to lead-lib** - How this fit in with `lead-lib`

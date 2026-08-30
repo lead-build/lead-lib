@@ -1,0 +1,77 @@
+|{ cwd, include, ... }|
+let
+    lib = include "${cwd}/lead-lib/lead-lib.pbb" {
+        languages = {
+            sp = include "${cwd}/lang_structpack.pbb";
+        };
+    };
+
+    target = | _ |
+    {
+        config = {
+            objbasedir = "${cwd}/build/release";
+            srcdirs = [ "${cwd}" ];
+            outdir = "${cwd}/out_release";
+        };
+    };
+
+     # lead-lib are using a wrapper to make the code cleaner. It's just a normal
+     # module as seen before
+    my_app_a = lib.lang.c.mod {
+        src = [
+            "${cwd}/main.c",
+            "${cwd}/model/model.c",
+            "${cwd}/model/some_other_model.c",
+        ];
+        inc = [
+            "${cwd}/model",
+        ];
+    };
+    my_app_b = lib.lang.c.mod {
+        src = [
+            "${cwd}/main.c",
+            "${cwd}/model/model.c",
+            "${cwd}/model/some_other_model.c",
+        ];
+        inc = [
+            "${cwd}/model",
+        ];
+    };
+    my_model = lib.lang.c.mod {
+        src = [
+            "${cwd}/main.c",
+            "${cwd}/model/model.c",
+            "${cwd}/model/some_other_model.c",
+        ];
+        inc = [
+            "${cwd}/model",
+        ];
+    };
+    my_sp_mod = lib.lang.sp.mod {
+        inc = [
+            "${cwd}/model",
+        ];
+        src = [
+            "${cwd}/model/some_struct.toml",
+        ];
+    };
+
+    app = lib.merge [
+        my_app,
+        my_sp_mod,
+    ];
+in
+ # lead-build can handle a list of generated output. However, lib.build already
+ # returns a list, so flatten it, using the lead-lib toolkit function "flatten"
+lib.tk.flatten [
+    lib.build [
+        lib.lang.c.app_build "my_app",
+        target_release,
+        app,
+    ],
+    lib.build [
+        lib.lang.c.app_build "my_app_debug",
+        target_debug,
+        app,
+    ],
+]
