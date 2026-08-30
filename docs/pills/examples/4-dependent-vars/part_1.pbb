@@ -1,0 +1,9 @@
+|{ cwd, ... }|
+let
+    mod = {
+        app = "my_app";
+        arch = "x86_64";
+        outdir = "${cwd}/out";
+    };
+in
+mod.outdir / (mod.app + "-" + mod.arch)

@@ -1,0 +1,9 @@
+|{ pb, ... }|
+{
+    merge = | mods |
+    {
+        objdir = ( | prev mod | prev ++ mod.objdir for []: mods );
+        srcdir = ( | prev mod | prev ++ mod.srcdir for []: mods );
+        app = ( | prev mod | prev ++ mod.app for []: mods );
+    };
+}

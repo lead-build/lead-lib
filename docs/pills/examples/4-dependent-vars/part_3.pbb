@@ -1,0 +1,13 @@
+|{ cwd, ... }|
+let
+    mod = | l |{
+        app = "my_app";
+        arch = "x86_64";
+        outdir = "${cwd}/out";
+        outfile = l.outdir / (l.app + "-" + l.arch);
+    };
+
+    iter1 = mod { };
+    iter2 = mod iter1;
+in
+iter2.outfile

@@ -1,0 +1,16 @@
+|{ cwd, ... }|
+let
+    mod = | l |
+    let
+        ll = l l;
+    in
+    {
+        var_a = "a";
+        var_b = ll.var_a + "b";
+        var_c = ll.var_b + "c";
+        var_d = ll.var_c + "d";
+    };
+
+    res = mod mod;
+in
+res.var_d

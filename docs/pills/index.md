@@ -4,6 +4,14 @@ In this series of pills, we will introduce the concepts used in lead-lib to make
 a complete modular build environment, that can be extensible with new languages,
 without updates to lead-lib
 
+Note that all files demonstrated in those pills that is placed in `lib/` is to
+build up the internals of `lead-lib` itself, and not inteded to be made by the
+user of the build system.
+
+Those pills is intended to go deep into the intenrals of `lead-lib`, to
+understand the underlying structure of the build system, to be able to adapd and
+use the advanced featuers of the library.
+
 We will go through how to modularize for:
 - multiple targets, configuration and cross compilation
 - resuable parts of the build
@@ -45,9 +53,9 @@ Good to know, and read up later, when needed
 * [Pill 2 - **Modules**](2-modules.md) - introduction of the concept of having source code
   modules, and including libraries instead of source files.
 * Pill 3 - **Configuring compilers** - how to use modules to manage compiler
-  configurations and cross-compilation.
-* Pill 4 - **Multiple langauges** - a naive approach for multiple language
-  support.
+  configuration.
+* Pill 4 - **Dependent variables** - Looking at how module parameters can depend
+  on eachother.
 * Pill 5 - **Code generation** - How to integrate code generation and custom
   langauges
 * Pill 6 - **Generalization** - How can we use what we learned from code
