@@ -4,3 +4,16 @@ site_description: Lead - Declarative build environment
 
 theme:
   name: readthedocs
+
+nav:
+  - Home: index.md
+
+  - Under the hood:
+    - "Introruction": under-the-hood/index.md
+    - "1 - Basic builds": under-the-hood/1-builds.md
+    - "2 - Modules": under-the-hood/2-modules.md
+    - "3 - Configuration": under-the-hood/3-configuration.md
+    - "4 - Dependent Variables": under-the-hood/4-dependent-vars.md
+    - "5 - Generic build function": under-the-hood/5-generic-build.md
+    - "6 - lead-lib and multiple languages": under-the-hood/6-lead-lib.md
+    - "7 - multiple targets": under-the-hood/7-multiple-targets.md
