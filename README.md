@@ -10,9 +10,8 @@ implements the same interface and modules compose cleanly.
 
 This is where *lead-lib* comes in.
 
-More information is available in the [documentation](https://lead-lib.readthedocs.io/)
-
-For information about the language for [lead-build](https://github.com/lead-build/lead-build) itself, checkout it's own [documentation](https://lead-build.readthedocs.io/).
+More information is available in the
+[documentation](https://lead-build.readthedocs.io/)
 
 ## Usage
 
