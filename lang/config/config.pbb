@@ -21,12 +21,28 @@
             arch = "posix";
             variant = "native";
             srcdirs = [];
+            objbasedir = null;
             subdir = [];
             objdir = (
                 | dir subdir | dir / subdir
                 for (ll.config.objbasedir) : (ll.config.subdir)
             );
             outdir = null;
+        };
+    };
+
+    export = {
+        mod = | vars l |
+        {
+            config = vars;
+        };
+        simple = | base_dir l |
+        {
+            config = {
+                srcdirs = [ base_dir ];
+                objbasedir = base_dir / "build";
+                outdir = base_dir / "out";
+            };
         };
     };
 }
