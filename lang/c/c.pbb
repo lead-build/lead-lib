@@ -176,16 +176,17 @@ in
             src ? [],
             defines ? { },
             ...
-        }|
-        | _ |{
+        } _ |{
             c = {
                 inc = inc;
                 src = src;
                 defines = defines;
             };
         };
-        app_build = | target_name |
-        | l |{
+        config = | config _ |{
+            c = config;
+        };
+        app_build = | target_name l |{
             config = {
                 target_name = target_name;
                 subdir = [ target_name ];
@@ -194,8 +195,7 @@ in
                 out = (l l).c.app;
             };
         };
-        reloc_build = | target_name |
-        | l |{
+        reloc_build = | target_name l |{
             config = {
                 target_name = target_name;
                 subdir = [ target_name ];
