@@ -26,21 +26,21 @@ let
         }
     );
 
-    reloc_archive = | lexp |
+    reloc_archive = | ll |
     let
          # Borrow relocation info from c
         {
             cmd_ld_reloc,
-            reloc_flags ? [],
             ...
-        } = lexp.c;
+        } = ll.c;
 
         rule_reloc = pb.rule (
             |{ input, output, ... }|
             {
                 command = [
                     cmd_ld_reloc,
-                ] ++ reloc_flags ++ [
+                    "-r", # TODO: Better handling of flags
+                    "--whole-archive",
                     "-o",
                     output,
                     input,
@@ -118,7 +118,7 @@ in
                 for (ll.rust.obj)
             ];
             obj = let
-                reloc = reloc_archive l;
+                reloc = reloc_archive ll;
             in
             [
                 | crate | reloc crate.archive_file

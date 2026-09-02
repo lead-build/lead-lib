@@ -10,7 +10,7 @@ let
         common = include "${cwd}/common/common.pbb";
         config = include "${cwd}/config/config.pbb";
         c = include "${cwd}/c/c.pbb";
-         #rust = include "${cwd}/rust/rust.pbb";
+        rust = include "${cwd}/rust/rust.pbb";
     } // ext_langs;
 
     merge = | mods l |
