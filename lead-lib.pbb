@@ -1,13 +1,8 @@
-|{ include, cwd, ... }|
-|{
-    languages ? { },
-    ...
-}|
+|{ include, cwd, ... }| |{ languages ? { }, ... }|
 let
     lang = include (cwd / "lang" / "lang.pbb") {
         languages = languages;
     };
-
     tk = include (cwd / "tools" / "toolkit.pbb");
 in
 {

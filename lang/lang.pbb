@@ -1,75 +1,45 @@
-|{ include, cwd, ops, ... }|
-|{
-    languages = ext_langs,
-    ...
-}|
+|{ include, cwd, ops, ... }| |{ languages = ext_langs, ... }|
 let
-
-     # Add predefined langauges
+    # Add predefined langauges
     languages = {
         common = include "${cwd}/common/common.pbb";
         config = include "${cwd}/config/config.pbb";
         c = include "${cwd}/c/c.pbb";
         rust = include "${cwd}/rust/rust.pbb";
     } // ext_langs;
-
-    merge = | mods l |
+    merge = |mods l|
     let
-        mods_evaled = [
-            | mod | mod l
-            for mods
-        ];
-         # All language fields are listed
-        zipped = {
-            | (lang, vs) | (lang, ops.transposeObjs vs)
-            for (ops.transposeObjs mods_evaled)
-        };
+        mods_evaled = [ |mod| mod l for mods ];
+        # All language fields are listed
+        zipped = { |(lang, vs)| (lang, ops.transposeObjs vs) for (ops.transposeObjs mods_evaled) };
     in
     {
-        | (lang, langvars) |
+        |(lang, langvars)|
         let
-            langdef = languages.{ lang };
+            langdef = languages.{lang};
         in
         (
             lang,
             {
-                | (field, vs) |
+                |(field, vs)|
                 let
-                    mergefunc = langdef.merge.{ field };
+                    mergefunc = langdef.merge.{field};
                 in
-                (
-                    field,
-                    (
-                        | a b | mergefunc a b
-                        for vs
-                    )
-                )
+                (field, (|a b| mergefunc a b for vs))
                 for langvars
             }
         )
         for zipped
     };
-
-    base = merge [
-        | (_, def) |
-        def.base
-        for languages
-    ];
-
-    build = | mods | let
-        all = merge ([ base ] ++ mods);
+    base = merge [ |(_, def)| def.base for languages ];
+    build = |mods|
+    let
+        all = merge ([base] ++ mods);
     in
     (all all).common.out;
-
-    export = {
-        | (lang, def) | (lang, def.export)
-        for languages
-        if | (_, def) | def ? "export"
-    };
-
-    gate = | cond mod l |
-    {
-        | (k, v) | (
+    export = { |(lang, def)| (lang, def.export) for languages if |(_, def)| def ? "export" };
+    gate = |cond mod l| {
+        |(k, v)| (
             k,
             switch (cond l) {
                 false => { };

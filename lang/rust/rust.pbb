@@ -1,65 +1,46 @@
 |{ pb, ... }|
 let
-    tmpl_crate = | flags | pb.rule (
-        |{
-            name,
+    tmpl_crate = |flags| pb.rule (|{ name, input, output, target_dir, header_file, depfile, }| {
+        command = [
+            "CBINDGEN_HEADER_OUTPUT=${header_file}",
+            "cargo",
+            "build",
+            "--manifest-path",
             input,
-            output,
+            "--target-dir",
             target_dir,
-            header_file,
-            depfile,
-        }|
-        {
-            command = [
-                "CBINDGEN_HEADER_OUTPUT=${header_file}",
-                "cargo",
-                "build",
-                "--manifest-path",
-                input,
-                "--target-dir",
-                target_dir,
-                "--release",
-            ] ++ flags;
-            pool = "console";
-            depfile = depfile;
-            description = "CARGO ${input}";
-        }
-    );
-
-    reloc_archive = | ll |
+            "--release",
+        ] ++ flags;
+        pool = "console";
+        depfile = depfile;
+        description = "CARGO ${input}";
+    });
+    reloc_archive = |ll|
     let
-         # Borrow relocation info from c
-        {
-            cmd_ld_reloc,
-            ...
-        } = ll.c;
-
-        rule_reloc = pb.rule (
-            |{ input, output, ... }|
-            {
-                command = [
-                    cmd_ld_reloc,
-                    "-r", # TODO: Better handling of flags
-                    "--whole-archive",
-                    "-o",
-                    output,
-                    input,
-                ];
-                description = "LD reloc ${cmd_ld_reloc} ${output}";
-            }
-        );
+        # Borrow relocation info from c
+        { cmd_ld_reloc, ... } = ll.c;
+        rule_reloc = pb.rule (|{ input, output, ... }| {
+            command = [
+                cmd_ld_reloc,
+                "-r",
+                # TODO: Better handling of flags
+                "--whole-archive",
+                "-o",
+                output,
+                input,
+            ];
+            description = "LD reloc ${cmd_ld_reloc} ${output}";
+        });
     in
-    | archive |
-    rule_reloc {
+    |archive| rule_reloc {
         input = archive;
         output = archive - ".a" + ".o";
     };
-
     build_crate = |{ outdir, objdir, target }|
     let
         flags = switch target {
             false => [];
-            target => [ "--target=${target}" ];
+            target => ["--target=${target}"];
         };
         subdir = switch target {
             false => "release";
@@ -84,16 +65,16 @@ let
         header_file = header_file;
         depfile = depfile;
     };
-
 in
 {
     merge = {
-        target = | a b | b;
-        crates = | a b | a ++ b;
-        obj = | a b | a ++ b;
+        target = |a b| b;
+        crates = |a b| a ++ b;
+        obj = |a b| a ++ b;
     };
-
-    base = | l | let ll = l l;
+    base = |l|
+    let
+        ll = l l;
     in
     {
         rust = {
@@ -109,27 +90,17 @@ in
             ];
         };
         c = {
-            inc = [
-                | crate | crate.header_file / ".."
-                for (ll.rust.obj)
-            ];
-            extra_deps = [
-                | crate | crate.header_file
-                for (ll.rust.obj)
-            ];
-            obj = let
+            inc = [ |crate| crate.header_file / ".." for (ll.rust.obj) ];
+            extra_deps = [ |crate| crate.header_file for (ll.rust.obj) ];
+            obj =
+            let
                 reloc = reloc_archive ll;
             in
-            [
-                | crate | reloc crate.archive_file
-                for (ll.rust.obj)
-            ];
+            [ |crate| reloc crate.archive_file for (ll.rust.obj) ];
         };
     };
-
     export = {
-        mod = |{ name, dir }|
-        | l |{
+        mod = |{ name, dir }| |l| {
             rust = {
                 crates = [
                     {

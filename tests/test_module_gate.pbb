@@ -1,17 +1,13 @@
 |{ include, args = { repo, ... }, ... }|
 let
     lib = include "${repo}/lead-lib.pbb" { };
-
-    mod = | l |{
+    mod = |l| {
         lang = {
             arg = "val";
         };
     };
-
-    mod_empty = | l |{
+    mod_empty = |l| {
         lang = { };
     };
 in
-(lib.gate (|l| false) mod { }) == (mod_empty { }) &&
-(lib.gate (|l| true) mod { }) == (mod { })
-
+(lib.gate (|l| false) mod { }) == (mod_empty { }) && (lib.gate (|l| true) mod { }) == (mod { })

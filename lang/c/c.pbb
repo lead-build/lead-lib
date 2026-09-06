@@ -1,134 +1,80 @@
 |{ pb, ... }|
 let
-    tmpl_compile = | lexp |
+    tmpl_compile = |lexp|
     let
-        {
-            cmd_cc,
-            cflags ? [],
-            inc ? [],
-            defines ? { },
-            extra_deps ? [],
-            ...
-        } = lexp.c;
-
-        define_args = [
-            | (name, value) | "-D${name}=${value}"
-            for defines
-        ];
-        include_args = [
-            | include | "-I${include}"
-            for inc
-        ];
-
-        rule_compile = pb.rule (
-            |{ input, output, ... }|
-            {
-                command = [
-                    cmd_cc,
-                    "-c",
-                    "-o",
-                    output,
-                    "-MMD",
-                    "-MF",
-                    "${output}.d",
-                    input,
-                ] ++ cflags ++ define_args ++ include_args;
-                depfile = "${output}.d";
-                description = "CC ${cmd_cc} ${input}";
-            }
-        );
-
-        src_to_obj = | file | pb.translate {
+        { cmd_cc, cflags ? [], inc ? [], defines ? { }, extra_deps ? [], ... } = lexp.c;
+        define_args = [ |(name, value)| "-D${name}=${value}" for defines ];
+        include_args = [ |include| "-I${include}" for inc ];
+        rule_compile = pb.rule (|{ input, output, ... }| {
+            command = [
+                cmd_cc,
+                "-c",
+                "-o",
+                output,
+                "-MMD",
+                "-MF",
+                "${output}.d",
+                input,
+            ] ++ cflags ++ define_args ++ include_args;
+            depfile = "${output}.d";
+            description = "CC ${cmd_cc} ${input}";
+        });
+        src_to_obj = |file| pb.translate {
             input = file;
             from = lexp.config.srcdirs;
             to = lexp.config.objdir;
         };
     in
-    | file | rule_compile
-    {
+    |file| rule_compile {
         input = file;
         output = (src_to_obj file) - ".c" + ".o";
         deps = extra_deps;
     };
-
-    tmpl_link = | lexp |
+    tmpl_link = |lexp|
     let
-        {
-            cmd_ld,
-            config_flags ? [],
-            ldflags ? [],
-            ...
-        } = lexp.c;
-
-        rule_link = pb.rule (
-            |{ input, output, ... }|
-            {
-                command = [
-                    cmd_ld,
-                    "-o",
-                    output,
-                    input,
-                ] ++ config_flags ++ ldflags;
-                description = "LD ${cmd_ld} ${output}";
-            }
-        );
+        { cmd_ld, config_flags ? [], ldflags ? [], ... } = lexp.c;
+        rule_link = pb.rule (|{ input, output, ... }| {
+            command = [cmd_ld, "-o", output, input,] ++ config_flags ++ ldflags;
+            description = "LD ${cmd_ld} ${output}";
+        });
     in
-    | objs | rule_link {
+    |objs| rule_link {
         input = objs;
         output = lexp.config.outdir / lexp.config.target_name;
     };
-
-    tmpl_reloc = | lexp |
+    tmpl_reloc = |lexp|
     let
-        {
-            cmd_ld_reloc,
-            reloc_flags ? [],
-            ...
-        } = lexp.c;
-
-        rule_reloc = pb.rule (
-            |{ input, output, ... }|
-            {
-                command = [
-                    cmd_ld_reloc,
-                ] ++ reloc_flags ++ [
-                    "-o",
-                    output,
-                    input,
-                ];
-                description = "LD reloc ${cmd_ld_reloc} ${output}";
-            }
-        );
-
+        { cmd_ld_reloc, reloc_flags ? [], ... } = lexp.c;
+        rule_reloc = pb.rule (|{ input, output, ... }| {
+            command = [cmd_ld_reloc,] ++ reloc_flags ++ ["-o", output, input,];
+            description = "LD reloc ${cmd_ld_reloc} ${output}";
+        });
         target_name = lexp.config.target_name;
     in
-    | objs | rule_reloc {
+    |objs| rule_reloc {
         input = objs;
         output = lexp.config.outdir / "${target_name}.o";
     };
 in
 {
     merge = {
-        cmd_cc = | a b | b;
-        cmd_ld = | a b | b;
-        cmd_ld_reloc = | a b | b;
-        cflags = | a b | a ++ b;
-        ldflags = | a b | a ++ b;
-        reloc_flags = | a b | a ++ b;
-
-        extra_deps = | a b | a ++ b;
-
-        defines = | a b | a // b;
-
-        inc = | a b | a ++ b;
-        src = | a b | a ++ b;
-        obj = | a b | a ++ b;
-
-        app = | a b | a ++ b;
-        reloc = | a b | a ++ b;
+        cmd_cc = |a b| b;
+        cmd_ld = |a b| b;
+        cmd_ld_reloc = |a b| b;
+        cflags = |a b| a ++ b;
+        ldflags = |a b| a ++ b;
+        reloc_flags = |a b| a ++ b;
+        extra_deps = |a b| a ++ b;
+        defines = |a b| a // b;
+        inc = |a b| a ++ b;
+        src = |a b| a ++ b;
+        obj = |a b| a ++ b;
+        app = |a b| a ++ b;
+        reloc = |a b| a ++ b;
     };
-
-    base = | l | let ll = l l;
+    base = |l|
+    let
+        ll = l l;
     in
     {
         c = {
@@ -138,67 +84,51 @@ in
             cflags = [];
             ldflags = [];
             reloc_flags = [];
-
             extra_deps = [];
-
             defines = { };
-
             inc = [];
             src = [];
-
             obj =
             let
                 compile = tmpl_compile ll;
             in
-            [
-                | src_file | compile src_file
-                for (ll.c.src)
-            ];
-
-            app = [
-                tmpl_link ll ll.c.obj
-            ];
+            [ |src_file| compile src_file for (ll.c.src) ];
+            app = [tmpl_link ll ll.c.obj];
             reloc = [
-                | _ |{
+                |_| {
                     c = {
                         inc = ll.c.inc;
                         extra_deps = ll.c.extra_deps;
-                        obj = [ tmpl_reloc ll ll.c.obj ];
+                        obj = [tmpl_reloc ll ll.c.obj];
                     };
                 },
             ];
         };
     };
-
     export = {
-        mod = |{
-            inc ? [],
-            src ? [],
-            defines ? { },
-            ...
-        } _ |{
+        mod = |{ inc ? [], src ? [], defines ? { }, ... } _| {
             c = {
                 inc = inc;
                 src = src;
                 defines = defines;
             };
         };
-        config = | config _ |{
+        config = |config _| {
             c = config;
         };
-        app_build = | target_name l |{
+        app_build = |target_name l| {
             config = {
                 target_name = target_name;
-                subdir = [ target_name ];
+                subdir = [target_name];
             };
             common = {
                 out = (l l).c.app;
             };
         };
-        reloc_build = | target_name l |{
+        reloc_build = |target_name l| {
             config = {
                 target_name = target_name;
-                subdir = [ target_name ];
+                subdir = [target_name];
             };
             common = {
                 out = (l l).c.reloc;

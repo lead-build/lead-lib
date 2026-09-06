@@ -2,4 +2,4 @@
 let
     lib = include "${repo}/lead-lib.pbb" { };
 in
-(lib.build [])== []
+(lib.build []) == []

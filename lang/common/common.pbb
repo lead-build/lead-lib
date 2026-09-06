@@ -1,11 +1,8 @@
-|{ pb, ... }|
-{
+|{ pb, ... }| {
     merge = {
-        out = | a b | a ++ b;
+        out = |a b| a ++ b;
     };
-
-    base = | l |
-    {
+    base = |l| {
         common = {
             out = [];
         };

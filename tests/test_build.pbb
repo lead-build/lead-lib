@@ -2,40 +2,34 @@
 let
     mylang = {
         merge = {
-            fa = | a b | a ++ b;
-            fb = | a b | a ++ b;
+            fa = |a b| a ++ b;
+            fb = |a b| a ++ b;
         };
-
-        base =
-        | l |{
+        base = |l| {
             mylang = {
                 fa = [];
                 fb = [];
             };
         };
     };
-
     lib = include "${repo}/lead-lib.pbb" {
         languages = {
             mylang = mylang;
         };
     };
-
-    mod_a = | l |{
+    mod_a = |l| {
         mylang = {
-            fb = (l l).mylang.fa ++ [ "b" ];
+            fb = (l l).mylang.fa ++ ["b"];
         };
     };
-
-    mod_b = | l |{
+    mod_b = |l| {
         mylang = {
-            fa = [ "a" ];
+            fa = ["a"];
         };
         common = {
             out = (l l).mylang.fb;
         };
     };
-
-    out = lib.build [ mod_a, mod_b ];
+    out = lib.build [mod_a, mod_b];
 in
-out == [ "a", "b" ]
+out == ["a", "b"]

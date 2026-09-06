@@ -1,8 +1,7 @@
 |{ include, args = { repo, ... }, ... }|
 let
     lib = include "${repo}/lead-lib.pbb" { };
-
-    config = | l |{
+    config = |l| {
         config = {
             arch = "arch_b";
         };
@@ -10,23 +9,20 @@ let
             out = (l l).c.inc;
         };
     };
-
-    mod_a = | l |{
+    mod_a = |l| {
         c = {
-            inc = [ "var_a" ];
+            inc = ["var_a"];
         };
     };
-
-    mod_b = | l |{
+    mod_b = |l| {
         c = {
-            inc = [ "var_b" ];
+            inc = ["var_b"];
         };
     };
-
     mods = [
         config,
         (lib.gate (|l| (l l).config.arch == "arch_a") mod_a),
         (lib.gate (|l| (l l).config.arch == "arch_b") mod_b),
     ];
 in
-(lib.build mods) == [ "var_b" ]
+(lib.build mods) == ["var_b"]
