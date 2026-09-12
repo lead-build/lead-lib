@@ -4,7 +4,7 @@ let
     let
         { cmd_cc, cflags ? [], inc ? [], defines ? { }, extra_deps ? [], ... } = lexp.c;
         define_args = [ |(name, value)| "-D${name}=${value}" for defines ];
-        include_args = [ |include| "-I${include}" for inc ];
+        include_args = [ |inc_dir| "-I${inc_dir}" for inc ];
         rule_compile = pb.rule (|{ input, output, ... }| {
             command = [
                 cmd_cc,
@@ -19,15 +19,15 @@ let
             depfile = "${output}.d";
             description = "CC ${cmd_cc} ${input}";
         });
-        src_to_obj = |file| pb.translate {
-            input = file;
+        src_to_obj = |input| pb.translate {
+            input;
             from = lexp.config.srcdirs;
             to = lexp.config.objdir;
         };
     in
-    |file| rule_compile {
-        input = file;
-        output = (src_to_obj file) - ".c" + ".o";
+    |input| rule_compile {
+        input;
+        output = (src_to_obj input) - ".c" + ".o";
         deps = extra_deps;
     };
     tmpl_link = |lexp|
@@ -108,9 +108,9 @@ in
     export = {
         mod = |{ inc ? [], src ? [], defines ? { }, ... } _| {
             c = {
-                inc = inc;
-                src = src;
-                defines = defines;
+                inc;
+                src;
+                defines;
             };
         };
         config = |config _| {
@@ -118,7 +118,7 @@ in
         };
         app_build = |target_name l| {
             config = {
-                target_name = target_name;
+                target_name;
                 subdir = [target_name];
             };
             common = {
@@ -127,7 +127,7 @@ in
         };
         reloc_build = |target_name l| {
             config = {
-                target_name = target_name;
+                target_name;
                 subdir = [target_name];
             };
             common = {

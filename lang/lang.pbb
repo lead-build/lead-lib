@@ -1,12 +1,12 @@
-|{ include, cwd, ops, ... }| |{ languages = ext_langs, ... }|
+|{ include, cwd, ops, ... }| |{ languages, ... }|
 let
     # Add predefined langauges
-    languages = {
+    lang_defs = {
         common = include "${cwd}/common/common.pbb";
         config = include "${cwd}/config/config.pbb";
         c = include "${cwd}/c/c.pbb";
         rust = include "${cwd}/rust/rust.pbb";
-    } // ext_langs;
+    } // languages;
     merge = |mods l|
     let
         mods_evaled = [ |mod| mod l for mods ];
@@ -16,14 +16,14 @@ let
     {
         |(lang, langvars)|
         let
-            langdef = languages.{lang};
+            def = lang_defs.{lang};
         in
         (
             lang,
             {
                 |(field, vs)|
                 let
-                    mergefunc = langdef.merge.{field};
+                    mergefunc = def.merge.{field};
                 in
                 (field, (|a b| mergefunc a b for vs))
                 for langvars
@@ -31,13 +31,13 @@ let
         )
         for zipped
     };
-    base = merge [ |(_, def)| def.base for languages ];
+    base = merge [ |(_, def)| def.base for lang_defs ];
     build = |mods|
     let
         all = merge ([base] ++ mods);
     in
     (all all).common.out;
-    export = { |(lang, def)| (lang, def.export) for languages if |(_, def)| def ? "export" };
+    export = { |(lang, def)| (lang, def.export) for lang_defs if |(_, def)| def ? "export" };
     gate = |cond mod l| {
         |(k, v)| (
             k,
@@ -50,8 +50,8 @@ let
     };
 in
 {
-    merge = merge;
-    build = build;
-    export = export;
-    gate = gate;
+    merge;
+    build;
+    export;
+    gate;
 }

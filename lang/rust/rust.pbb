@@ -50,20 +50,21 @@ let
     in
     |{ name, dir, ... }|
     let
-        header_file = "${objdir}/${name}/${subdir}/${name}.h";
-        archive_file = "${objdir}/${name}/${subdir}/lib${name}.a";
-        depfile = "${objdir}/${name}/${subdir}/lib${name}.d";
+        target_dir = "${objdir}/${name}";
+        header_file = "${target_dir}/${subdir}/${name}.h";
+        archive_file = "${target_dir}/${subdir}/lib${name}.a";
+        depfile = "${target_dir}/${subdir}/lib${name}.d";
     in
     rule_crate {
-        name = name;
+        name;
+        header_file;
+        depfile;
+        target_dir;
         input = "${dir}/Cargo.toml";
         output = {
-            header_file = header_file;
-            archive_file = archive_file;
+            header_file;
+            archive_file;
         };
-        target_dir = "${objdir}/${name}";
-        header_file = header_file;
-        depfile = depfile;
     };
 in
 {
