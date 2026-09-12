@@ -5,30 +5,18 @@ let
             fa = |a b| a ++ b;
             fb = |a b| a ++ b;
         };
-        base = |l| {
+        base = |self| {
             mylang = {
                 fa = [];
                 fb = [];
             };
         };
     };
-    lib = include "${repo}/lead-lib.pbb" {
-        languages = {
-            mylang = mylang;
-        };
-    };
-    mod_a = |l| {
-        mylang = {
-            fb = (l l).mylang.fa ++ ["b"];
-        };
-    };
-    mod_b = |l| {
-        mylang = {
-            fa = ["a"];
-        };
-        common = {
-            out = (l l).mylang.fb;
-        };
+    lib = include "${repo}/lead-lib.pbb" { languages = { mylang = mylang; }; };
+    mod_a = |self| { mylang = { fb = self.mylang.fa ++ ["b"]; }; };
+    mod_b = |self| {
+        mylang = { fa = ["a"]; };
+        common = { out = self.mylang.fb; };
     };
     out = lib.build [mod_a, mod_b];
 in

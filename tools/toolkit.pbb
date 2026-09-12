@@ -1,3 +1,1 @@
-|{ ... }| {
-    flatten = |xss| (|acc xs| acc ++ xs for [] : xss);
-}
+|{ ... }| { flatten = |xss| (|acc xs| acc ++ xs for [] : xss); }

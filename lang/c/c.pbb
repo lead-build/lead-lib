@@ -1,8 +1,8 @@
 |{ pb, ... }|
 let
-    tmpl_compile = |lexp|
+    tmpl_compile = |self|
     let
-        { cmd_cc, cflags ? [], inc ? [], defines ? { }, extra_deps ? [], ... } = lexp.c;
+        { cmd_cc, cflags ? [], inc ? [], defines ? { }, extra_deps ? [], ... } = self.c;
         define_args = [ |(name, value)| "-D${name}=${value}" for defines ];
         include_args = [ |inc_dir| "-I${inc_dir}" for inc ];
         rule_compile = pb.rule (|{ input, output, ... }| {
@@ -21,8 +21,8 @@ let
         });
         src_to_obj = |input| pb.translate {
             input;
-            from = lexp.config.srcdirs;
-            to = lexp.config.objdir;
+            from = self.config.srcdirs;
+            to = self.config.objdir;
         };
     in
     |input| rule_compile {
@@ -30,30 +30,30 @@ let
         output = (src_to_obj input) - ".c" + ".o";
         deps = extra_deps;
     };
-    tmpl_link = |lexp|
+    tmpl_link = |self|
     let
-        { cmd_ld, config_flags ? [], ldflags ? [], ... } = lexp.c;
+        { cmd_ld, config_flags ? [], ldflags ? [], ... } = self.c;
         rule_link = pb.rule (|{ input, output, ... }| {
             command = [cmd_ld, "-o", output, input,] ++ config_flags ++ ldflags;
             description = "LD ${cmd_ld} ${output}";
         });
     in
-    |objs| rule_link {
-        input = objs;
-        output = lexp.config.outdir / lexp.config.target_name;
+    |input| rule_link {
+        input;
+        output = self.config.outdir / self.config.target_name;
     };
-    tmpl_reloc = |lexp|
+    tmpl_reloc = |self|
     let
-        { cmd_ld_reloc, reloc_flags ? [], ... } = lexp.c;
+        { cmd_ld_reloc, reloc_flags ? [], ... } = self.c;
         rule_reloc = pb.rule (|{ input, output, ... }| {
             command = [cmd_ld_reloc,] ++ reloc_flags ++ ["-o", output, input,];
             description = "LD reloc ${cmd_ld_reloc} ${output}";
         });
-        target_name = lexp.config.target_name;
+        target_name = self.config.target_name;
     in
     |objs| rule_reloc {
         input = objs;
-        output = lexp.config.outdir / "${target_name}.o";
+        output = self.config.outdir / "${target_name}.o";
     };
 in
 {
@@ -72,11 +72,7 @@ in
         app = |a b| a ++ b;
         reloc = |a b| a ++ b;
     };
-    base = |l|
-    let
-        ll = l l;
-    in
-    {
+    base = |self| {
         c = {
             cmd_cc = "gcc";
             cmd_ld = "gcc";
@@ -90,49 +86,37 @@ in
             src = [];
             obj =
             let
-                compile = tmpl_compile ll;
+                compile = tmpl_compile self;
             in
-            [ |src_file| compile src_file for (ll.c.src) ];
-            app = [tmpl_link ll ll.c.obj];
+            [ |src_file| compile src_file for (self.c.src) ];
+            app = [tmpl_link self self.c.obj];
             reloc = [
                 |_| {
                     c = {
-                        inc = ll.c.inc;
-                        extra_deps = ll.c.extra_deps;
-                        obj = [tmpl_reloc ll ll.c.obj];
+                        inc = self.c.inc;
+                        extra_deps = self.c.extra_deps;
+                        obj = [tmpl_reloc self self.c.obj];
                     };
                 },
             ];
         };
     };
     export = {
-        mod = |{ inc ? [], src ? [], defines ? { }, ... } _| {
-            c = {
-                inc;
-                src;
-                defines;
-            };
-        };
-        config = |config _| {
-            c = config;
-        };
-        app_build = |target_name l| {
+        mod = |{ inc ? [], src ? [], defines ? { }, ... } _| { c = { inc; src; defines; }; };
+        config = |config _| { c = config; };
+        app_build = |target_name self| {
             config = {
                 target_name;
                 subdir = [target_name];
             };
-            common = {
-                out = (l l).c.app;
-            };
+            common = { out = self.c.app; };
         };
-        reloc_build = |target_name l| {
+        reloc_build = |target_name self| {
             config = {
                 target_name;
                 subdir = [target_name];
             };
-            common = {
-                out = (l l).c.reloc;
-            };
+            common = { out = self.c.reloc; };
         };
     };
 }

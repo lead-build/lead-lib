@@ -35,8 +35,13 @@ let
     build = |mods|
     let
         all = merge ([base] ++ mods);
+        # Resolve multiple iterations, to ensure dependencies are fully propagated
+        # Currently limit to 10, since that should be enough.
+        # This may be moved to a language construct for infinite recursions, to
+        # properly leverage laziness in the future.
+        resolved = (|mod _| all mod for null : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
     in
-    (all all).common.out;
+    resolved.common.out;
     export = { |(lang, def)| (lang, def.export) for lang_defs if |(_, def)| def ? "export" };
     gate = |cond mod l| {
         |(k, v)| (
@@ -49,9 +54,4 @@ let
         for (mod l)
     };
 in
-{
-    merge;
-    build;
-    export;
-    gate;
-}
+{ merge; build; export; gate; }

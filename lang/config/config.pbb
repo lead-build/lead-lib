@@ -9,11 +9,7 @@
         subdir = |a b| a ++ b;
         outdir = |a b| b;
     };
-    base = |l|
-    let
-        ll = l l;
-    in
-    {
+    base = |self| {
         config = {
             # target_name = ...
             arch = "posix";
@@ -21,15 +17,16 @@
             srcdirs = [];
             objbasedir = null;
             subdir = [];
-            objdir = (|dir subdir| dir / subdir for (ll.config.objbasedir) : (ll.config.subdir));
+            objdir = (
+                |dir subdir| dir / subdir
+                for (self.config.objbasedir) : (self.config.subdir)
+            );
             outdir = null;
         };
     };
     export = {
-        mod = |vars l| {
-            config = vars;
-        };
-        simple = |base_dir l| {
+        mod = |vars self| { config = vars; };
+        simple = |base_dir self| {
             config = {
                 srcdirs = [base_dir];
                 objbasedir = base_dir / "build";

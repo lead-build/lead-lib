@@ -15,10 +15,10 @@ let
         depfile = depfile;
         description = "CARGO ${input}";
     });
-    reloc_archive = |ll|
+    reloc_archive = |self|
     let
         # Borrow relocation info from c
-        { cmd_ld_reloc, ... } = ll.c;
+        { cmd_ld_reloc, ... } = self.c;
         rule_reloc = pb.rule (|{ input, output, ... }| {
             command = [
                 cmd_ld_reloc,
@@ -56,15 +56,9 @@ let
         depfile = "${target_dir}/${subdir}/lib${name}.d";
     in
     rule_crate {
-        name;
-        header_file;
-        depfile;
-        target_dir;
+        name; header_file; depfile; target_dir;
         input = "${dir}/Cargo.toml";
-        output = {
-            header_file;
-            archive_file;
-        };
+        output = { header_file; archive_file; };
     };
 in
 {
@@ -73,35 +67,31 @@ in
         crates = |a b| a ++ b;
         obj = |a b| a ++ b;
     };
-    base = |l|
-    let
-        ll = l l;
-    in
-    {
+    base = |self| {
         rust = {
             target = false;
             crates = [];
             obj = [
                 build_crate {
-                    outdir = ll.config.outdir;
-                    objdir = ll.config.objdir;
-                    target = ll.rust.target;
+                    outdir = self.config.outdir;
+                    objdir = self.config.objdir;
+                    target = self.rust.target;
                 }
-                for (ll.rust.crates)
+                for (self.rust.crates)
             ];
         };
         c = {
-            inc = [ |crate| crate.header_file / ".." for (ll.rust.obj) ];
-            extra_deps = [ |crate| crate.header_file for (ll.rust.obj) ];
+            inc = [ |crate| crate.header_file / ".." for (self.rust.obj) ];
+            extra_deps = [ |crate| crate.header_file for (self.rust.obj) ];
             obj =
             let
-                reloc = reloc_archive ll;
+                reloc = reloc_archive self;
             in
-            [ |crate| reloc crate.archive_file for (ll.rust.obj) ];
+            [ |crate| reloc crate.archive_file for (self.rust.obj) ];
         };
     };
     export = {
-        mod = |{ name, dir }| |l| {
+        mod = |{ name, dir }| |self| {
             rust = {
                 crates = [
                     {

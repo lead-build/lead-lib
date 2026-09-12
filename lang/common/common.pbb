@@ -1,10 +1,4 @@
 |{ pb, ... }| {
-    merge = {
-        out = |a b| a ++ b;
-    };
-    base = |l| {
-        common = {
-            out = [];
-        };
-    };
+    merge = { out = |a b| a ++ b; };
+    base = |self| { common = { out = []; }; };
 }
