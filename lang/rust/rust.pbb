@@ -91,7 +91,7 @@ in
         };
     };
     export = {
-        mod = |{ name, dir }| |self| {
+        mod = |{ name, dir } self| {
             rust = {
                 crates = [
                     {

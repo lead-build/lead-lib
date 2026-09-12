@@ -1,4 +1,4 @@
-|{ include, cwd, ops, ... }| |{ languages, ... }|
+|{ include, cwd, ops, ... } { languages, ... }|
 let
     # Add predefined langauges
     lang_defs = {
