@@ -1,0 +1,18 @@
+|{ cwd, pb, ops, ... }|
+let
+    rule_report = pb.rule (|{ input, output, ... }| {
+        command = ["${cwd}/test_runner.sh", "-o", output, input];
+        description = "TESTING";
+    });
+in
+{
+    merge = { tests = |a b| a ++ b; };
+    base = |self| { tests = { tests = []; }; };
+    export = {
+        report = |output all| rule_report {
+            input = (ops.recurse all).tests.tests;
+            output;
+            deps = ["${cwd}/test_runner.sh"];
+        };
+    };
+}

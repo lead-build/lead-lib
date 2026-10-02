@@ -30,7 +30,7 @@ let
         output = (src_to_obj input) - ".c" + ".o";
         deps = extra_deps;
     };
-    tmpl_link = |self|
+    tmpl_link = |output self|
     let
         { cmd_ld, config_flags ? [], ldflags ? [], ... } = self.c;
         rule_link = pb.rule (|{ input, output, ... }| {
@@ -38,10 +38,7 @@ let
             description = "LD ${cmd_ld} ${output}";
         });
     in
-    |input| rule_link {
-        input;
-        output = self.config.outdir / self.config.target_name;
-    };
+    |input| rule_link { input; output; };
     tmpl_reloc = |self|
     let
         { cmd_ld_reloc, reloc_flags ? [], ... } = self.c;
@@ -68,6 +65,7 @@ in
         defines = |a b| a // b;
         inc = |a b| a ++ b;
         src = |a b| a ++ b;
+        tests = |a b| a ++ b;
         obj = |a b| a ++ b;
         app = |a b| a ++ b;
         reloc = |a b| a ++ b;
@@ -84,12 +82,13 @@ in
             defines = { };
             inc = [];
             src = [];
+            tests = [];
             obj =
             let
                 compile = tmpl_compile self;
             in
             [ |src_file| compile src_file for (self.c.src) ];
-            app = [tmpl_link self self.c.obj];
+            app = [tmpl_link (self.config.outdir / self.config.target_name) self self.c.obj];
             reloc = [
                 |_| {
                     c = {
@@ -97,12 +96,26 @@ in
                         extra_deps = self.c.extra_deps;
                         obj = [tmpl_reloc self self.c.obj];
                     };
+                    tests = self.tests;
                 },
+            ];
+        };
+        tests = {
+            tests = [
+                |(
+                    test_name,
+                    test_file
+                )| tmpl_link (self.config.outdir / "testcases" / test_name) self (self.c.obj ++ [
+                    (tmpl_compile self test_file)
+                ])
+                for self.c.tests
             ];
         };
     };
     export = {
-        mod = |{ inc ? [], src ? [], defines ? { }, ... } _| { c = { inc; src; defines; }; };
+        mod = |{ inc ? [], src ? [], tests ? [], defines ? { }, ... } _| {
+            c = { inc; src; defines; tests; };
+        };
         config = |config _| { c = config; };
         app_build = |target_name self| {
             config = {

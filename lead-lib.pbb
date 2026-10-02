@@ -6,6 +6,7 @@ in
 {
     build = lang.build;
     merge = lang.merge;
+    test_report = lang.test_report;
     lang = lang.export;
     gate = lang.gate;
     tk = tk;
