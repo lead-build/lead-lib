@@ -102,12 +102,16 @@ in
         };
         tests = {
             tests = [
-                |(
-                    test_name,
-                    test_file
-                )| tmpl_link (self.config.outdir / "testcases" / test_name) self (self.c.obj ++ [
-                    (tmpl_compile self test_file)
-                ])
+                |test_file|
+                let
+                    test_exec = pb.translate {
+                        input = test_file - ".c";
+                        from = self.config.srcdirs;
+                        to = self.config.outdir / "testcases";
+                    };
+                    test_obj = tmpl_compile self test_file;
+                in
+                tmpl_link test_exec self (self.c.obj ++ [test_obj])
                 for self.c.tests
             ];
         };
