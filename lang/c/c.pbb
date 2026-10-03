@@ -101,17 +101,20 @@ in
             ];
         };
         tests = {
+            # Each test is built by the test report, not here. It is a function
+            # taking for_test, which gives a copy of self with the test-only
+            # mods added, so those only affect the test files.
             tests = [
-                |test_file|
+                |test_file test_self|
                 let
                     test_exec = pb.translate {
                         input = test_file - ".c";
-                        from = self.config.srcdirs;
-                        to = self.config.outdir / "testcases";
+                        from = test_self.config.srcdirs;
+                        to = test_self.config.outdir / "testcases";
                     };
-                    test_obj = tmpl_compile self test_file;
+                    test_obj = tmpl_compile test_self test_file;
                 in
-                tmpl_link test_exec self (self.c.obj ++ [test_obj])
+                tmpl_link test_exec test_self (test_self.c.obj ++ [test_obj])
                 for self.c.tests
             ];
         };

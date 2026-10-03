@@ -4,9 +4,10 @@
 #
 # Usage: test_runner.sh [-o OUTPUT] [TEST...]
 #
-# The report is written to OUTPUT, or to stdout if -o is not given. -o must
-# be the first argument. OUTPUT is only replaced once all tests have run, so
-# an interrupted run never leaves a partial report.
+# The report is always written to stdout, as the tests run. With -o, it is
+# also written to OUTPUT. -o must be the first argument. OUTPUT is only
+# replaced once all tests have run, so an interrupted run never leaves a
+# partial report.
 #
 # Zero tests is valid, and gives a passing report.
 #
@@ -36,10 +37,15 @@ log=$(mktemp) || exit 2
 partial=
 trap 'rm -f "$log" ${partial:+"$partial"}' EXIT
 
-# Redirect the report to a temporary file beside OUTPUT
+# Copy the report to a temporary file beside OUTPUT, while still writing it to
+# stdout
+tee_pid=
 if [ -n "$output" ]; then
     partial="$output.partial"
-    exec > "$partial" || exit 2
+    : > "$partial" || exit 2
+    exec 3>&1
+    exec > >(tee "$partial" >&3)
+    tee_pid=$!
 fi
 
 # Current time in microseconds
@@ -87,7 +93,8 @@ for test in "$@"; do
         status=126
         echo "$test: not an executable file" > "$log"
     else
-        # A bare file name would be looked up in PATH, so make it a path
+        # Tests are files in the tree, never commands in PATH. Bash would look
+        # up a bare file name in PATH, so make it a path
         case "$test" in
             */*) cmd=$test ;;
             *) cmd=./$test ;;
@@ -125,7 +132,9 @@ if [ ${#failed[@]} -gt 0 ]; then
 fi
 
 if [ -n "$output" ]; then
-    exec > /dev/null
+    # Close the pipe to tee, and wait for it to finish writing the file
+    exec >&3 3>&-
+    wait "$tee_pid" || exit 2
     mv -f "$partial" "$output" || exit 2
     partial=
 fi

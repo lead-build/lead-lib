@@ -1,18 +1,34 @@
-|{ cwd, pb, ops, ... }|
+|{ cwd, pb, dbg, ops, ... }|
 let
-    rule_report = pb.rule (|{ input, output, ... }| {
-        command = ["${cwd}/test_runner.sh", "-o", output, input];
-        description = "TESTING";
-    });
+    tmpl_report =
+    let
+        rule_report = pb.rule (|{ input, output, ... }| {
+            command = ["${cwd}/test_runner.sh", "-o", output, input];
+            description = "executing tests";
+            pool = "console";
+        });
+    in
+    |output input| rule_report {
+        input; output;
+        deps = ["${cwd}/test_runner.sh"];
+    };
 in
 {
-    merge = { tests = |a b| a ++ b; };
-    base = |self| { tests = { tests = []; }; };
-    export = {
-        report = |output all| rule_report {
-            input = (ops.recurse all).tests.tests;
-            output;
-            deps = ["${cwd}/test_runner.sh"];
+    merge = {
+        tests = |a b| a ++ b;
+        test_mods = |a b| a ++ b;
+    };
+    base = |self| {
+        tests = {
+            tests = [];
+            test_mods = [];
         };
+    };
+    # Report is a special case, and not exported as a normal language function,
+    # since it needs access to merge. May be fixed later
+    report = |{ output, self }| tmpl_report output [ |test| test self for self.tests.tests ];
+    export = {
+        # Wrap a mod so only avaialbe for testing
+        for_test = |mod _| { tests = { test_mods = [mod]; }; };
     };
 }

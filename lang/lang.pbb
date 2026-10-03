@@ -33,13 +33,26 @@ let
         for zipped
     };
     base = merge [ |(_, def)| def.base for lang_defs ];
+
+    # Build combines all modules and generates a build output
     build = |mods|
     let
         all = merge ([base] ++ mods);
         self = ops.recurse all;
     in
     self.common.out;
-    test_report = |output mods| lang_defs.tests.export.report output (merge mods);
+
+    # Test report combines all modules, all test-only modules and generates an
+    # a test report
+    test_report = |output mods|
+    let
+        all_base = merge ([base] ++ mods);
+        self_base = ops.recurse all_base;
+        all_test = merge ([base] ++ mods ++ self_base.tests.test_mods);
+        self = ops.recurse all_test;
+    in
+    lang_defs.tests.report { output; self; };
+
     export = { |(lang, def)| (lang, def.export) for lang_defs if |(_, def)| def ? "export" };
     gate = |cond mod l| {
         |(k, v)| (
