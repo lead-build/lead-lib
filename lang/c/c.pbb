@@ -19,16 +19,34 @@ let
             depfile = "${output}.d";
             description = "CC ${cmd_cc} ${input}";
         });
+        # Assembly that is not preprocessed: it includes nothing, and the
+        # compiler writes no depfile for it
+        rule_assemble = pb.rule (|{ input, output, ... }| {
+            command = [
+                cmd_cc,
+                "-c",
+                "-o",
+                output,
+                input,
+            ] ++ cflags ++ define_args ++ include_args;
+            description = "AS ${cmd_cc} ${input}";
+        });
         src_to_obj = |input| pb.translate {
             input;
             from = self.config.srcdirs;
             to = self.config.objdir;
         };
+        compile = |rule suffix input| rule {
+            input;
+            output = (src_to_obj input) - suffix + ".o";
+            deps = extra_deps;
+        };
     in
-    |input| rule_compile {
-        input;
-        output = (src_to_obj input) - ".c" + ".o";
-        deps = extra_deps;
+    # C, assembly that is preprocessed (.S), and assembly that is not (.s)
+    |input| switch true {
+        (pb.matches "*.c" input) => compile rule_compile ".c" input;
+        (pb.matches "*.S" input) => compile rule_compile ".S" input;
+        (pb.matches "*.s" input) => compile rule_assemble ".s" input;
     };
     tmpl_link = |output self|
     let
