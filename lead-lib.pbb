@@ -4,6 +4,7 @@ let
     tk = include (cwd / "tools" / "toolkit.pbb");
 in
 {
+    combine = lang.combine;
     build = lang.build;
     merge = lang.merge;
     test_report = lang.test_report;

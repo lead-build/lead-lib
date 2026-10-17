@@ -34,24 +34,22 @@ let
     };
     base = merge [ |(_, def)| def.base for lang_defs ];
 
+    # Merge and combine all mods. This is what resolves all recursions
+    combine = |mods| ops.recurse (merge ([base] ++ mods));
+
+
     # Build combines all modules and generates a build output
-    build = |mods|
-    let
-        all = merge ([base] ++ mods);
-        self = ops.recurse all;
-    in
-    self.common.out;
+    build = |mods| (combine mods).common.out;
 
     # Test report combines all modules, all test-only modules and generates an
     # a test report
     test_report = |output mods|
     let
-        all_base = merge ([base] ++ mods);
-        self_base = ops.recurse all_base;
-        all_test = merge ([base] ++ mods ++ self_base.tests.test_mods);
-        self = ops.recurse all_test;
+        self_base = combine (mods);
+        self = combine (mods ++ self_base.tests.test_mods);
     in
     lang_defs.tests.report { output; self; };
+
 
     export = { |(lang, def)| (lang, def.export) for lang_defs if |(_, def)| def ? "export" };
     gate = |cond mod l| {
@@ -65,4 +63,4 @@ let
         for (mod l)
     };
 in
-{ merge; build; test_report; export; gate; }
+{ combine; merge; build; test_report; export; gate; }
