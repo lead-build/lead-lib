@@ -1,0 +1,9 @@
+|{ cwd, pb, ... }|
+let
+    filetype = |file| switch true {
+        (pb.matches "*.c" file) => "source";
+        (pb.matches "*.s" file) => "assembly";
+    };
+    files = ["${cwd}/a.c", "${cwd}/b.s",];
+in
+[ |f| filetype f for files ] == ["source", "assembly"]
