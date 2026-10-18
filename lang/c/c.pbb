@@ -22,13 +22,7 @@ let
         # Assembly that is not preprocessed: it includes nothing, and the
         # compiler writes no depfile for it
         rule_assemble = pb.rule (|{ input, output, ... }| {
-            command = [
-                cmd_cc,
-                "-c",
-                "-o",
-                output,
-                input,
-            ] ++ cflags ++ define_args ++ include_args;
+            command = [cmd_cc, "-c", "-o", output, input,] ++ cflags ++ define_args ++ include_args;
             description = "AS ${cmd_cc} ${input}";
         });
         src_to_obj = |input| pb.translate {
@@ -50,13 +44,18 @@ let
     };
     tmpl_link = |output self|
     let
-        { cmd_ld, config_flags ? [], ldflags ? [], ... } = self.c;
+        { cmd_ld, config_flags ? [], ldflags ? [], start_obj ? [], end_obj ? [], ... } = self.c;
         rule_link = pb.rule (|{ input, output, ... }| {
             command = [cmd_ld, "-o", output, input,] ++ config_flags ++ ldflags;
             description = "LD ${cmd_ld} ${output}";
         });
     in
-    |input| rule_link { input; output; };
+    # The start objects come first on the link line and the end objects last,
+    # as the start files of a compiler driver do (crt1.o crti.o ... crtn.o)
+    |input| rule_link {
+        input = start_obj ++ input ++ end_obj;
+        output;
+    };
     tmpl_reloc = |self|
     let
         { cmd_ld_reloc, reloc_flags ? [], ... } = self.c;
@@ -83,8 +82,12 @@ in
         defines = |a b| a // b;
         inc = |a b| a ++ b;
         src = |a b| a ++ b;
+        start_src = |a b| a ++ b;
+        end_src = |a b| a ++ b;
         tests = |a b| a ++ b;
         obj = |a b| a ++ b;
+        start_obj = |a b| a ++ b;
+        end_obj = |a b| a ++ b;
         app = |a b| a ++ b;
         reloc = |a b| a ++ b;
     };
@@ -100,12 +103,24 @@ in
             defines = { };
             inc = [];
             src = [];
+            start_src = [];
+            end_src = [];
             tests = [];
             obj =
             let
                 compile = tmpl_compile self;
             in
             [ |src_file| compile src_file for (self.c.src) ];
+            start_obj =
+            let
+                compile = tmpl_compile self;
+            in
+            [ |src_file| compile src_file for (self.c.start_src) ];
+            end_obj =
+            let
+                compile = tmpl_compile self;
+            in
+            [ |src_file| compile src_file for (self.c.end_src) ];
             app = [tmpl_link (self.config.outdir / self.config.target_name) self self.c.obj];
             reloc = [
                 |_| {
@@ -113,6 +128,10 @@ in
                         inc = self.c.inc;
                         extra_deps = self.c.extra_deps;
                         obj = [tmpl_reloc self self.c.obj];
+                        # Not relocated into the object: they stay where
+                        # they are on the link line of whoever uses this
+                        start_obj = self.c.start_obj;
+                        end_obj = self.c.end_obj;
                     };
                     tests = self.tests;
                 },
@@ -138,9 +157,18 @@ in
         };
     };
     export = {
-        mod = |{ inc ? [], src ? [], tests ? [], defines ? { }, ... } _| {
-            c = { inc; src; defines; tests; };
-        };
+        # start_src and end_src are linked before and after all other objects
+        # (the start files of C, such as crt1, crti and crtn), in the order
+        # given. They are compiled like src.
+        mod = |{
+            inc ? [],
+            src ? [],
+            start_src ? [],
+            end_src ? [],
+            tests ? [],
+            defines ? { },
+            ...
+        } _| { c = { inc; src; start_src; end_src; defines; tests; }; };
         config = |config _| { c = config; };
         app_build = |target_name self| {
             config = {
