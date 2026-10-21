@@ -43,12 +43,20 @@ let
 
     # Test report combines all modules, all test-only modules and generates an
     # a test report
-    test_report = |output mods|
+    test_multi_report = |output modss|
     let
-        self_base = combine (mods);
-        self = combine (mods ++ self_base.tests.test_mods);
+        cases = (
+            |prev mods|
+            let
+                self_base = combine (mods);
+                self = combine (mods ++ self_base.tests.test_mods);
+            in
+            prev ++ (lang_defs.tests.test_cases self)
+            for [] : modss
+        );
     in
-    lang_defs.tests.report { output; self; };
+    lang_defs.tests.test_report { output; cases; };
+    test_report = |output mods| test_multi_report output [mods];
 
 
     export = { |(lang, def)| (lang, def.export) for lang_defs if |(_, def)| def ? "export" };
@@ -63,4 +71,4 @@ let
         for (mod l)
     };
 in
-{ combine; merge; build; test_report; export; gate; }
+{ combine; merge; build; test_multi_report; test_report; export; gate; }

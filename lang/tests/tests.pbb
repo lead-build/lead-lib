@@ -26,7 +26,8 @@ in
     };
     # Report is a special case, and not exported as a normal language function,
     # since it needs access to merge. May be fixed later
-    report = |{ output, self }| tmpl_report output [ |test| test self for self.tests.tests ];
+    test_cases = |self| [ |test| test self for self.tests.tests ];
+    test_report = |{ output, cases }| tmpl_report output cases;
     export = {
         # Wrap a mod so only avaialbe for testing
         for_test = |mod _| { tests = { test_mods = [mod]; }; };

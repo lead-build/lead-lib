@@ -1,0 +1,21 @@
+|{ include, args = { repo, ... }, ... }|
+let
+    # Report the list of test cases instead of generating a rule for them
+    tests = include "${repo}/lang/tests/tests.pbb" // { test_report = |{ output, cases }| cases; };
+    named = {
+        merge = { name = |a b| b; };
+        base = |self| { named = { name = ""; }; };
+    };
+    lib = include "${repo}/lead-lib.pbb" { languages = { tests; named; }; };
+    name = |n self| { named = { name = n; }; };
+    test_case = |self| { tests = { tests = [|s| "case-${s.named.name}"]; }; };
+    test_only = |self| { tests = { test_mods = [test_case]; }; };
+    # Each list of mods is combined on its own, with its own test-only mods
+    cases = lib.test_multi_report "report" [
+        [(name "a"), test_case],
+        [(name "b")],
+        [(name "c"), test_only],
+    ];
+in
+(cases == ["case-a", "case-c"]) && ((lib.test_multi_report "report" []) == [
+]) && ((lib.test_report "report" [(name "a"), test_only]) == ["case-a"])

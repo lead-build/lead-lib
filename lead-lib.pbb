@@ -7,6 +7,7 @@ in
     combine = lang.combine;
     build = lang.build;
     merge = lang.merge;
+    test_multi_report = lang.test_multi_report;
     test_report = lang.test_report;
     lang = lang.export;
     gate = lang.gate;
