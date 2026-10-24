@@ -44,10 +44,21 @@ let
     };
     tmpl_link = |output self|
     let
-        { cmd_ld, config_flags ? [], ldflags ? [], start_obj ? [], end_obj ? [], ... } = self.c;
+        { cmd_ld, config_flags ? [], ldflags ? [], start_obj ? [], end_obj ? [], link_depfile ? false, ... } = self.c;
+        # With link_depfile, the linker writes the files that it read, the
+        # linker scripts and what they include among them, as the depfile of
+        # the link, so that a program is linked again when one of them
+        # changes: an option of lld, and of GNU ld from 2.40
         rule_link = pb.rule (|{ input, output, ... }| {
-            command = [cmd_ld, "-o", output, input,] ++ config_flags ++ ldflags;
+            command = [cmd_ld, "-o", output, input,] ++ config_flags ++ ldflags
+                ++ switch link_depfile {
+                    true => ["-Wl,--dependency-file=${output}.d",];
+                    false => [];
+                };
             description = "LD ${cmd_ld} ${output}";
+        } // switch link_depfile {
+            true => { depfile = "${output}.d"; };
+            false => { };
         });
     in
     # The start objects come first on the link line and the end objects last,
@@ -75,6 +86,7 @@ in
         cmd_cc = |a b| b;
         cmd_ld = |a b| b;
         cmd_ld_reloc = |a b| b;
+        link_depfile = |a b| b;
         cflags = |a b| a ++ b;
         ldflags = |a b| a ++ b;
         reloc_flags = |a b| a ++ b;
@@ -96,6 +108,7 @@ in
             cmd_cc = "gcc";
             cmd_ld = "gcc";
             cmd_ld_reloc = "ld";
+            link_depfile = false;
             cflags = [];
             ldflags = [];
             reloc_flags = [];
