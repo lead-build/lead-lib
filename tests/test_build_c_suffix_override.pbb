@@ -1,0 +1,43 @@
+|{ include, args = { repo, ... }, pb, ... }|
+let
+    lib = include "${repo}/lead-lib.pbb" { };
+
+    srcdir = "${repo}/src";
+    objdir = "${repo}/obj";
+
+    mods = [
+        |self| {
+            config = {
+                arch = "arch_b";
+                srcdirs = [srcdir];
+                objdir = objdir;
+            };
+            c = {
+                # Prove that objnaem can be overrideable
+                objname = |f| f + ".objsuffix";
+            };
+            common = { out = self.c.obj; };
+        },
+        |self| { c = { src = ["${repo}/src/x_file.c"]; }; },
+    ];
+
+    [outfile] = lib.build mods;
+
+    # Force an expr to eval, but don't care about output
+    runs = |expr| switch (expr == "") {
+        false => true;
+        true => true;
+    };
+in
+# Forging a path is not possible, since they will not eq, due to one being
+# dependent on the build.
+#
+# To not depend on that parameter, test a side effect instead: removing the
+# suffix from the path and re-adding it, since that retains the dependencies.
+#
+# It also needs to be proven that it is put in objdir
+(outfile - "file.c.objsuffix" + "file.c.objsuffix" == outfile) && runs (pb.translate {
+    input = outfile;
+    from = [objdir];
+    to = "${repo}/somethingelse";
+})

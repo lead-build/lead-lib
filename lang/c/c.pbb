@@ -2,7 +2,7 @@
 let
     tmpl_compile = |self|
     let
-        { cmd_cc, cflags ? [], inc ? [], defines ? { }, extra_deps ? [], ... } = self.c;
+        { cmd_cc, objname, cflags, inc, defines, extra_deps, ... } = self.c;
         define_args = [ |(name, value)| "-D${name}=${value}" for defines ];
         include_args = [ |inc_dir| "-I${inc_dir}" for inc ];
         rule_compile = pb.rule (|{ input, output, ... }| {
@@ -30,31 +30,43 @@ let
             from = self.config.srcdirs;
             to = self.config.objdir;
         };
-        compile = |rule suffix input| rule {
+        compile = |rule input| rule {
             input;
-            output = (src_to_obj input) - suffix + ".o";
+            output = objname (src_to_obj input);
             deps = extra_deps;
         };
     in
     # C, assembly that is preprocessed (.S), and assembly that is not (.s)
     |input| switch true {
-        (pb.matches "*.c" input) => compile rule_compile ".c" input;
-        (pb.matches "*.S" input) => compile rule_compile ".S" input;
-        (pb.matches "*.s" input) => compile rule_assemble ".s" input;
+        (pb.matches "*.c" input) => compile rule_compile input;
+        (pb.matches "*.S" input) => compile rule_compile input;
+        (pb.matches "*.s" input) => compile rule_assemble input;
     };
     tmpl_link = |output self|
     let
-        { cmd_ld, config_flags ? [], ldflags ? [], start_obj ? [], end_obj ? [], link_depfile ? false, ... } = self.c;
+        {
+            cmd_ld,
+            config_flags ? [],
+            ldflags ? [],
+            start_obj ? [],
+            end_obj ? [],
+            link_depfile ? false,
+            ...
+        } = self.c;
         # With link_depfile, the linker writes the files that it read, the
         # linker scripts and what they include among them, as the depfile of
         # the link, so that a program is linked again when one of them
         # changes: an option of lld, and of GNU ld from 2.40
         rule_link = pb.rule (|{ input, output, ... }| {
-            command = [cmd_ld, "-o", output, input,] ++ config_flags ++ ldflags
-                ++ switch link_depfile {
-                    true => ["-Wl,--dependency-file=${output}.d",];
-                    false => [];
-                };
+            command = [
+                cmd_ld,
+                "-o",
+                output,
+                input,
+            ] ++ config_flags ++ ldflags ++ switch link_depfile {
+                true => ["-Wl,--dependency-file=${output}.d",];
+                false => [];
+            };
             description = "LD ${cmd_ld} ${output}";
         } // switch link_depfile {
             true => { depfile = "${output}.d"; };
@@ -89,6 +101,7 @@ in
         link_depfile = |a b| b;
         cflags = |a b| a ++ b;
         ldflags = |a b| a ++ b;
+        objname = |a b| b;
         reloc_flags = |a b| a ++ b;
         extra_deps = |a b| a ++ b;
         defines = |a b| a // b;
@@ -111,6 +124,11 @@ in
             link_depfile = false;
             cflags = [];
             ldflags = [];
+            objname = |input| switch true {
+                (pb.matches "*.c" input) => input - ".c" + ".o";
+                (pb.matches "*.S" input) => input - ".S" + ".o";
+                (pb.matches "*.s" input) => input - ".s" + ".o";
+            };
             reloc_flags = [];
             extra_deps = [];
             defines = { };
