@@ -8,6 +8,10 @@
         objdir = |a b| b;
         subdir = |a b| a ++ b;
         outdir = |a b| b;
+
+        # List of enabled features, usable for lib.gate
+        features = |a b| a ++ b;
+        has_feature = |a b| b;
     };
     base = |self| {
         config = {
@@ -22,6 +26,13 @@
                 for (self.config.objbasedir) : (self.config.subdir)
             );
             outdir = null;
+
+            features = [];
+
+            has_feature = |feature| (
+                |acc cur| (acc || cur == feature)
+                for false : self.config.features
+            );
         };
     };
     export = {
@@ -33,5 +44,6 @@
                 outdir = base_dir / "out";
             };
         };
+        features = |features self| { config = { features; }; };
     };
 }

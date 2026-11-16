@@ -103,6 +103,8 @@ in
         ldflags = |a b| a ++ b;
         objname = |a b| b;
         reloc_flags = |a b| a ++ b;
+        feature_defines = |a b| a // b;
+
         extra_deps = |a b| a ++ b;
         defines = |a b| a // b;
         inc = |a b| a ++ b;
@@ -130,8 +132,13 @@ in
                 (pb.matches "*.s" input) => input - ".s" + ".o";
             };
             reloc_flags = [];
+            feature_defines = { };
             extra_deps = [];
-            defines = { };
+            defines = {
+                |(feature, define)| (define, 1)
+                for self.c.feature_defines
+                if |(feature, define)| self.config.has_feature feature
+            };
             inc = [];
             src = [];
             start_src = [];
@@ -191,15 +198,8 @@ in
         # start_src and end_src are linked before and after all other objects
         # (the start files of C, such as crt1, crti and crtn), in the order
         # given. They are compiled like src.
-        mod = |{
-            inc ? [],
-            src ? [],
-            start_src ? [],
-            end_src ? [],
-            tests ? [],
-            defines ? { },
-            ...
-        } _| { c = { inc; src; start_src; end_src; defines; tests; }; };
+        mod = |config _| { c = config; };
+        # deprecated - use lib.c.mod instead
         config = |config _| { c = config; };
         app_build = |target_name self| {
             config = {
