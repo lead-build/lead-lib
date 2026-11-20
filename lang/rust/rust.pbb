@@ -42,7 +42,7 @@ let
             false => [];
             target => ["--target=${target}"];
         };
-        subdir = switch target {
+        objsubdir = switch target {
             false => "release";
             target => "${target}/release";
         };
@@ -51,9 +51,9 @@ let
     |{ name, dir, ... }|
     let
         target_dir = "${objdir}/${name}";
-        header_file = "${target_dir}/${subdir}/${name}.h";
-        archive_file = "${target_dir}/${subdir}/lib${name}.a";
-        depfile = "${target_dir}/${subdir}/lib${name}.d";
+        header_file = "${target_dir}/${objsubdir}/${name}.h";
+        archive_file = "${target_dir}/${objsubdir}/lib${name}.a";
+        depfile = "${target_dir}/${objsubdir}/lib${name}.d";
     in
     rule_crate {
         name; header_file; depfile; target_dir;

@@ -4,10 +4,14 @@
         arch = |a b| b;
         variant = |a b| b;
         srcdirs = |a b| a ++ b;
+
         objbasedir = |a b| b;
         objdir = |a b| b;
-        subdir = |a b| a ++ b;
+        objsubdir = |a b| a ++ b;
+
+        outbasedir = |a b| b;
         outdir = |a b| b;
+        outsubdir = |a b| a ++ b;
 
         # List of enabled features, usable for lib.gate
         features = |a b| a ++ b;
@@ -19,13 +23,20 @@
             arch = "posix";
             variant = "native";
             srcdirs = [];
+
             objbasedir = null;
-            subdir = [];
             objdir = (
-                |dir subdir| dir / subdir
-                for (self.config.objbasedir) : (self.config.subdir)
+                |dir objsubdir| dir / objsubdir
+                for (self.config.objbasedir) : (self.config.objsubdir)
             );
-            outdir = null;
+            objsubdir = [];
+
+            outbasedir = null;
+            outdir = (
+                |dir objsubdir| dir / objsubdir
+                for (self.config.outbasedir) : (self.config.outsubdir)
+            );
+            outsubdir = [];
 
             features = [];
 
@@ -41,7 +52,7 @@
             config = {
                 srcdirs = [base_dir];
                 objbasedir = base_dir / "build";
-                outdir = base_dir / "out";
+                outbasedir = base_dir / "out";
             };
         };
         features = |features self| { config = { features; }; };

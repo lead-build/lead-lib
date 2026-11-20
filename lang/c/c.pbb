@@ -204,14 +204,14 @@ in
         app_build = |target_name self| {
             config = {
                 target_name;
-                subdir = [target_name];
+                objsubdir = [target_name];
             };
             common = { out = self.c.app; };
         };
         reloc_build = |target_name self| {
             config = {
                 target_name;
-                subdir = [target_name];
+                objsubdir = [target_name];
             };
             common = { out = self.c.reloc; };
         };
