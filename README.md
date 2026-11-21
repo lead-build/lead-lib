@@ -57,11 +57,14 @@ The top-level `lead-lib.pbb` exports:
       [lang/rust/README.md](lang/rust/README.md))
     - `lang.config`, for common build configuration, such as
       `lang.config.simple`
-    - `lang.common`, shared language-level helpers, such as
-      `lang.common.merge_target`, a helper to merge target metadata such as
-      `common.subdir`
+    - `lang.common`, which defines `common.out`, the list of outputs that
+      `build` returns
 - `tk`, the toolkit helpers module, such as `tk.flatten`, which flattens a list
   of lists into a single list
 
-In the C language backend, object output translation respects
-`target.common.subdir` by appending it to `config.common.objdir`.
+The languages place intermediate files, such as object files, in
+`config.objdir`, and final outputs in `config.outdir`. By default,
+`config.objdir` is `config.objbasedir` followed by the directories listed in
+`config.objsubdir`, and `config.outdir` is `config.outbasedir` followed by the
+directories listed in `config.outsubdir`. `lang.c.app_build` and
+`lang.c.reloc_build` append the target name to `config.objsubdir`.
